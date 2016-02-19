@@ -1,0 +1,7 @@
+#!/bin/bash
+
+while :
+do
+  meldnafen
+  [ $? == 1 ] && break
+done
