@@ -1,193 +1,208 @@
-#!/usr/bin/env python
+from __future__ import division
 
 import fnmatch
-import harness
 from itertools import islice
+import json
+import logging
 from math import ceil
 import os
+import random
 import re
-import settings
+import sdl2
+import sdl2ui
+import sdl2ui.mixer
 
 
-HIGHLIGHT = (0xff, 0xff, 0x00, 0xff)
-LINE_SPACE = 8
-PAGE_SIZE = 20
-
-
-game = harness.Harness(width=settings.width, height=settings.height, zoom=3)
-
-font = game.load_bitmap_font("font.png", 4, 11,
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?()[]~-_+@"
-    ":/'., ")
-
-emulator = 0
-page = 0
-last_page = 0
-select = 0
-roms = []
-menu = False
 command = None
+with open(os.path.expanduser('~/.config/meldnafenrc')) as rc:
+    settings = json.load(rc)
+    settings['musics'] = os.path.expanduser(settings['musics'])
 
 
-def write(renderer, x, y, text, **kw):
-    filtered_text = "".join(filter(lambda x: x in font.font_map, text))\
-        .replace('  ', ' ')
-    renderer.draw_text(font, x, y, filtered_text, **kw)
+class MenuComponent(sdl2ui.Component):
+    highlight = (0x00, 0x00, 0xff, 0xff)
+    line_space = 8
+    default_active = False
 
+    def init(self):
+        self.select = 0
 
-def run_emulator():
-    global command
-    os.chdir(settings.emulators[emulator]['path'])
-    command = settings.emulators[emulator]['exec'] + \
-        [roms[page * PAGE_SIZE + select]]
-    game.quit()
+    def run_command(self):
+        global command
+        _, command = settings['menu_actions'][self.select]
+        self.app.quit = True
 
-
-def run_command():
-    global command
-    _, command = settings.menu_actions[select]
-    game.quit()
-
-
-def update_roms():
-    global roms
-    global select
-    global page
-    global last_page
-    includes = [
-        re.compile(fnmatch.translate(x))
-        for x in (
-            settings.emulators[emulator]['include'].split(';')
-            if settings.emulators[emulator].get('include')
-            else []
-        )
-    ]
-    excludes = [
-        re.compile(fnmatch.translate(x))
-        for x in (
-            settings.emulators[emulator]['exclude'].split(';')
-            if settings.emulators[emulator].get('exclude')
-            else []
-        )
-    ]
-    roms = sorted(filter(
-        lambda x: (not any(y.match(x) for y in excludes) or
-            any(y.match(x) for y in includes)),
-        os.listdir(settings.emulators[emulator]['path'])))
-    last_page = ceil(len(roms) / PAGE_SIZE)
-    select = 0
-    page = 0
-
-
-@game.draw
-def draw_list_roms(renderer):
-    border = 10
-    bottom = game.height - border - font.height
-    x, y = border, border
-    write(renderer, x, y, settings.emulators[emulator]['name'])
-    y += LINE_SPACE * 2
-    if not roms:
-        write(renderer, x, y, "No rom found")
-        return
-    for i, rom in enumerate(islice(roms, (PAGE_SIZE * page),
-            (PAGE_SIZE * (page + 1)))):
-        write(renderer, x, y, rom, tint=(i == select and HIGHLIGHT))
-        y += LINE_SPACE
-    y += LINE_SPACE
-    write(renderer, x, y,
-        "Page %d of %d (%d roms)" % ((page + 1), last_page, len(roms)))
-
-
-@game.update
-def update_list_roms(dt):
-    global emulator
-    global select
-    global page
-    if game.keys[game.KEY_UP]:
-        game.keys[game.KEY_UP] = False
-        select -= 1
-        if select < 0:
-            select = PAGE_SIZE - 1
-            page -= 1
-        if page < 0:
-            page = last_page - 1
-            select = len(roms) % PAGE_SIZE - 1
-    elif game.keys[game.KEY_DOWN]:
-        game.keys[game.KEY_DOWN] = False
-        select += 1
-        if select >= PAGE_SIZE:
-            select = 0
-            page += 1
-        if ((page == last_page - 1 and select >= len(roms) % PAGE_SIZE) or
-                page > last_page):
-            page = 0
-            select = 0
-    elif game.keys[game.KEY_LEFT]:
-        game.keys[game.KEY_LEFT] = False
-        emulator = (emulator - 1) % len(settings.emulators)
-        update_roms()
-    elif game.keys[game.KEY_RIGHT]:
-        game.keys[game.KEY_RIGHT] = False
-        emulator = (emulator + 1) % len(settings.emulators)
-        update_roms()
-    elif game.keys[game.KEY_A]:
-        game.keys[game.KEY_A] = False
-        run_emulator()
-
-
-def draw_menu(renderer):
-    border = 10
-    bottom = game.height - border - font.height
-    x, y = border, border
-    for i, (label, _) in enumerate(settings.menu_actions):
-        write(renderer, x, y, label, tint=(i == select and HIGHLIGHT))
-        y += LINE_SPACE
-
-
-def update_menu(dt):
-    global select
-    global page
-    if game.keys[game.KEY_UP]:
-        game.keys[game.KEY_UP] = False
-        select -= 1
-        if select < 0:
-            select = len(settings.menu_actions) - 1
-    elif game.keys[game.KEY_DOWN]:
-        game.keys[game.KEY_DOWN] = False
-        select += 1
-        if select >= len(settings.menu_actions):
-            select = 0
-    elif game.keys[game.KEY_A]:
-        game.keys[game.KEY_A] = False
-        run_command()
-
-
-@game.update
-def update(dt):
-    global menu
-    global select
-    global page
-    if game.keys[game.KEY_ESCAPE]:
-        game.quit()
-    elif game.keys[game.KEY_S]:
-        game.keys[game.KEY_S] = False
-        menu = not menu
-        if menu:
-            game.draw(draw_menu)
-            game.update(update_menu)
-            game.remove_handler(draw_list_roms)
-            game.remove_handler(update_list_roms)
+    def peek(self):
+        if self.app.keys[sdl2.SDL_SCANCODE_UP]:
+            self.app.keys[sdl2.SDL_SCANCODE_UP] = False
+            self.select -= 1
+            if self.select < 0:
+                self.select = len(settings['menu_actions']) - 1
+        elif self.app.keys[sdl2.SDL_SCANCODE_DOWN]:
+            self.app.keys[sdl2.SDL_SCANCODE_DOWN] = False
+            self.select += 1
+            if self.select >= len(settings['menu_actions']):
+                self.select = 0
+        elif self.app.keys[sdl2.SDL_SCANCODE_RETURN]:
+            self.app.keys[sdl2.SDL_SCANCODE_RETURN] = False
+            self.run_command()
         else:
-            game.draw(draw_list_roms)
-            game.update(update_list_roms)
-            game.remove_handler(draw_menu)
-            game.remove_handler(update_menu)
-        select = 0
-        page = 0
+            return False
+        return True
+
+    def render(self):
+        border = 10
+        x, y = border, border
+        for i, (label, _) in enumerate(settings['menu_actions']):
+            if i == self.select:
+                with self.app.tint(self.highlight):
+                    self.app.write('font-6', x, y, label)
+            else:
+                self.app.write('font-6', x, y, label)
+            y += self.line_space
 
 
-update_roms()
-game.loop()
+class ListRomsComponent(sdl2ui.Component):
+    page_size = 20
+    line_space = 8
+    highlight = (0xff, 0xff, 0x00, 0xff)
+
+    def init(self):
+        self.roms = []
+        self.emulator = 0
+        self.selected = 0
+        self.page = 0
+        self.last_page = 0
+        self.update_roms()
+        self.bgm = self.app.play('bgm', loops=-1)
+
+    def run_emulator(self):
+        global command
+        os.chdir(settings['emulators'][self.emulator]['path'])
+        command = settings['emulators'][self.emulator]['exec'] + \
+            [self.roms[self.selected]]
+        self.app.quit = True
+
+    def update_roms(self):
+        includes = [
+            re.compile(fnmatch.translate(x))
+            for x in (
+                settings['emulators'][self.emulator]['include'].split(';')
+                if settings['emulators'][self.emulator].get('include')
+                else []
+            )
+        ]
+        excludes = [
+            re.compile(fnmatch.translate(x))
+            for x in (
+                settings['emulators'][self.emulator]['exclude'].split(';')
+                if settings['emulators'][self.emulator].get('exclude')
+                else []
+            )
+        ]
+        self.roms = sorted(filter(
+            lambda x: (not any(y.match(x) for y in excludes) or
+                any(y.match(x) for y in includes)),
+            os.listdir(settings['emulators'][self.emulator]['path'])))
+        self.last_page = ceil(len(self.roms) / self.page_size)
+        self.selected = 0
+        self.page = 0
+
+    def peek(self):
+        if self.app.keys[sdl2.SDL_SCANCODE_UP]:
+            self.app.keys[sdl2.SDL_SCANCODE_UP] = False
+            self.selected -= 1
+            if self.selected < 0:
+                self.selected = len(self.roms) - 1
+        elif self.app.keys[sdl2.SDL_SCANCODE_DOWN]:
+            self.app.keys[sdl2.SDL_SCANCODE_DOWN] = False
+            self.selected += 1
+            if self.selected >= len(self.roms):
+                self.selected = 0
+        elif self.app.keys[sdl2.SDL_SCANCODE_LEFT]:
+            self.app.keys[sdl2.SDL_SCANCODE_LEFT] = False
+            self.emulator = (self.emulator - 1) % len(settings['emulators'])
+            self.update_roms()
+        elif self.app.keys[sdl2.SDL_SCANCODE_RIGHT]:
+            self.app.keys[sdl2.SDL_SCANCODE_RIGHT] = False
+            self.emulator = (self.emulator + 1) % len(settings['emulators'])
+            self.update_roms()
+        elif self.app.keys[sdl2.SDL_SCANCODE_RETURN]:
+            self.app.keys[sdl2.SDL_SCANCODE_RETURN] = False
+            self.run_emulator()
+        else:
+            return False
+        return True
+
+    def render(self):
+        border = 10
+        x, y = border, border
+        self.app.write('font-6', x, y,
+            settings['emulators'][self.emulator]['name'])
+        y += self.line_space * 2
+        if not self.roms:
+            self.app.write('font-6', x, y, "No rom found")
+            return
+        page, selected = divmod(self.selected, self.page_size)
+        for i, rom in enumerate(islice(self.roms, (self.page_size * page),
+                (self.page_size * (page + 1)))):
+            if i == selected:
+                with self.app.tint(self.highlight):
+                    self.app.write('font-6', x, y, rom)
+            else:
+                self.app.write('font-6', x, y, rom)
+            y += self.line_space
+        y += self.line_space
+        self.app.write('font-6', x, y,
+            "Page %d of %d (%d roms)" % (
+                (page + 1), self.last_page, len(self.roms)))
+
+    def deactivate(self):
+        self.bgm.pause()
+
+    def activate(self):
+        self.bgm.resume()
+
+
+class MainComponent(sdl2ui.Component):
+    def peek(self):
+        if self.app.keys[sdl2.SDL_SCANCODE_D]:
+            self.app.keys[sdl2.SDL_SCANCODE_D] = False
+            self.app.components[sdl2ui.component.DebuggerComponent].toggle()
+        elif self.app.keys[sdl2.SDL_SCANCODE_ESCAPE]:
+            self.app.keys[sdl2.SDL_SCANCODE_ESCAPE] = False
+            self.app.components[ListRomsComponent].toggle()
+            self.app.components[MenuComponent].toggle()
+        elif self.app.keys[sdl2.SDL_SCANCODE_Q]:
+            self.app.keys[sdl2.SDL_SCANCODE_Q] = False
+            self.app.quit = True
+        else:
+            return False
+        return True
+
+
+class Meldnafen(sdl2ui.App):
+    width = 256
+    height = 224
+    zoom = 3
+    fps = 30
+    name = "Meldnafen"
+    default_components = [MainComponent, ListRomsComponent, MenuComponent]
+    default_resources = [
+        ('bgm', os.path.join(settings['musics'],
+            random.choice(os.listdir(settings['musics'])))),
+    ]
+    renderer_flags = sdl2.SDL_RENDERER_SOFTWARE
+    init_flags = sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_AUDIO
+
+
+logging.basicConfig(level=logging.DEBUG)
+app = Meldnafen(components=[sdl2ui.component.DebuggerComponent],
+    mixer=sdl2ui.mixer.Mixer(frequency=44100),
+    window_flags=getattr(sdl2, settings['window']))
+app.loop()
+del app.mixer
+del app
 if command:
     os.execvp(command[0], command)
 exit(1)

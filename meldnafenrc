@@ -1,0 +1,31 @@
+{
+  "width": 256,
+  "height": 224,
+  "window": "SDL_WINDOW_HIDDEN",
+  "emulators": [
+    {
+        "name": "PC Engine",
+        "path": "pce_roms",
+        "exclude": "*.bin",
+        "exec": [
+          "systemd-inhibit", "--", "mednafen", "-force_module", "pce_fast"
+        ]
+    },
+    {
+        "name": "Nintendo Entertainment System",
+        "path": "nes_roms",
+        "exec": ["systemd-inhibit", "--", "mednafen"]
+    },
+    {
+        "name": "Mega Drive",
+        "path": "md_roms",
+        "exec": ["systemd-inhibit", "--", "mednafen"]
+    }
+  ],
+  "menu_actions": [
+    ["Shutdown", ["sudo", "systemctl", "poweroff"]],
+    ["Reboot", ["sudo", "systemctl", "reboot"]],
+    ["Quit", null]
+  ],
+  "musics": "~/bgm"
+}
