@@ -75,6 +75,7 @@ class ListRomsComponent(sdl2ui.Component):
         self.last_page = 0
         self.update_roms()
         self.bgm = self.app.play('bgm', loops=-1)
+        self.bgm.volume /= 4
 
     def run_emulator(self):
         global command
