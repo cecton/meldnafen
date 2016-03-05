@@ -11,6 +11,7 @@ import re
 import sdl2
 import sdl2ui
 import sdl2ui.ext.mixer
+import sdl2ui.ext.joystick
 
 
 command = None
@@ -184,13 +185,19 @@ class Mixer(sdl2ui.ext.mixer.Mixer):
     frequency = 44100
 
 
+class Joystick(sdl2ui.ext.joystick.BaseKeyboardJoystick):
+    mapping = {
+        button: getattr(sdl2, scancode_name)
+        for button, scancode_name in settings['joystick']
+    }
+
 class Meldnafen(sdl2ui.App):
     width = 256
     height = 224
     zoom = 3
     fps = 30
     name = "Meldnafen"
-    default_extensions = [Mixer]
+    default_extensions = [Mixer, Joystick]
     default_components = [MainComponent, ListRomsComponent, MenuComponent]
     default_resources = [
         ('bgm', os.path.join(settings['musics'],
