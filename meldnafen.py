@@ -119,6 +119,13 @@ class ListRomsComponent(sdl2ui.Component):
             self.selected += 1
             if self.selected >= len(self.roms):
                 self.selected = 0
+        elif self.app.keys[sdl2.SDL_SCANCODE_PAGEUP]:
+            self.app.keys[sdl2.SDL_SCANCODE_PAGEUP] = sdl2.SDL_FALSE
+            self.selected = max(self.selected - self.page_size, 0)
+        elif self.app.keys[sdl2.SDL_SCANCODE_PAGEDOWN]:
+            self.app.keys[sdl2.SDL_SCANCODE_PAGEDOWN] = sdl2.SDL_FALSE
+            self.selected = min(
+                self.selected + self.page_size, len(self.roms) - 1)
         elif self.app.keys[sdl2.SDL_SCANCODE_LEFT]:
             self.app.keys[sdl2.SDL_SCANCODE_LEFT] = sdl2.SDL_FALSE
             self.emulator = (self.emulator - 1) % len(settings['emulators'])
