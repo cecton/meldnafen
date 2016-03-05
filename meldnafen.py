@@ -34,17 +34,17 @@ class MenuComponent(sdl2ui.Component):
 
     def peek(self):
         if self.app.keys[sdl2.SDL_SCANCODE_UP]:
-            self.app.keys[sdl2.SDL_SCANCODE_UP] = False
+            self.app.keys[sdl2.SDL_SCANCODE_UP] = sdl2.SDL_FALSE
             self.select -= 1
             if self.select < 0:
                 self.select = len(settings['menu_actions']) - 1
         elif self.app.keys[sdl2.SDL_SCANCODE_DOWN]:
-            self.app.keys[sdl2.SDL_SCANCODE_DOWN] = False
+            self.app.keys[sdl2.SDL_SCANCODE_DOWN] = sdl2.SDL_FALSE
             self.select += 1
             if self.select >= len(settings['menu_actions']):
                 self.select = 0
         elif self.app.keys[sdl2.SDL_SCANCODE_RETURN]:
-            self.app.keys[sdl2.SDL_SCANCODE_RETURN] = False
+            self.app.keys[sdl2.SDL_SCANCODE_RETURN] = sdl2.SDL_FALSE
             self.run_command()
         else:
             return False
@@ -109,25 +109,25 @@ class ListRomsComponent(sdl2ui.Component):
 
     def peek(self):
         if self.app.keys[sdl2.SDL_SCANCODE_UP]:
-            self.app.keys[sdl2.SDL_SCANCODE_UP] = False
+            self.app.keys[sdl2.SDL_SCANCODE_UP] = sdl2.SDL_FALSE
             self.selected -= 1
             if self.selected < 0:
                 self.selected = len(self.roms) - 1
         elif self.app.keys[sdl2.SDL_SCANCODE_DOWN]:
-            self.app.keys[sdl2.SDL_SCANCODE_DOWN] = False
+            self.app.keys[sdl2.SDL_SCANCODE_DOWN] = sdl2.SDL_FALSE
             self.selected += 1
             if self.selected >= len(self.roms):
                 self.selected = 0
         elif self.app.keys[sdl2.SDL_SCANCODE_LEFT]:
-            self.app.keys[sdl2.SDL_SCANCODE_LEFT] = False
+            self.app.keys[sdl2.SDL_SCANCODE_LEFT] = sdl2.SDL_FALSE
             self.emulator = (self.emulator - 1) % len(settings['emulators'])
             self.update_roms()
         elif self.app.keys[sdl2.SDL_SCANCODE_RIGHT]:
-            self.app.keys[sdl2.SDL_SCANCODE_RIGHT] = False
+            self.app.keys[sdl2.SDL_SCANCODE_RIGHT] = sdl2.SDL_FALSE
             self.emulator = (self.emulator + 1) % len(settings['emulators'])
             self.update_roms()
         elif self.app.keys[sdl2.SDL_SCANCODE_RETURN]:
-            self.app.keys[sdl2.SDL_SCANCODE_RETURN] = False
+            self.app.keys[sdl2.SDL_SCANCODE_RETURN] = sdl2.SDL_FALSE
             self.run_emulator()
         else:
             return False
@@ -166,14 +166,14 @@ class ListRomsComponent(sdl2ui.Component):
 class MainComponent(sdl2ui.Component):
     def peek(self):
         if self.app.keys[sdl2.SDL_SCANCODE_D]:
-            self.app.keys[sdl2.SDL_SCANCODE_D] = False
+            self.app.keys[sdl2.SDL_SCANCODE_D] = sdl2.SDL_FALSE
             self.app.components[sdl2ui.component.DebuggerComponent].toggle()
         elif self.app.keys[sdl2.SDL_SCANCODE_ESCAPE]:
-            self.app.keys[sdl2.SDL_SCANCODE_ESCAPE] = False
+            self.app.keys[sdl2.SDL_SCANCODE_ESCAPE] = sdl2.SDL_FALSE
             self.app.components[ListRomsComponent].toggle()
             self.app.components[MenuComponent].toggle()
         elif self.app.keys[sdl2.SDL_SCANCODE_Q]:
-            self.app.keys[sdl2.SDL_SCANCODE_Q] = False
+            self.app.keys[sdl2.SDL_SCANCODE_Q] = sdl2.SDL_FALSE
             self.app.quit = True
         else:
             return False
