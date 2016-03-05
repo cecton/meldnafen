@@ -10,7 +10,7 @@ import random
 import re
 import sdl2
 import sdl2ui
-import sdl2ui.mixer
+import sdl2ui.ext.mixer
 
 
 command = None
@@ -180,12 +180,17 @@ class MainComponent(sdl2ui.Component):
         return True
 
 
+class Mixer(sdl2ui.ext.mixer.Mixer):
+    frequency = 44100
+
+
 class Meldnafen(sdl2ui.App):
     width = 256
     height = 224
     zoom = 3
     fps = 30
     name = "Meldnafen"
+    default_extensions = [Mixer]
     default_components = [MainComponent, ListRomsComponent, MenuComponent]
     default_resources = [
         ('bgm', os.path.join(settings['musics'],
@@ -196,11 +201,10 @@ class Meldnafen(sdl2ui.App):
 
 
 logging.basicConfig(level=logging.DEBUG)
-app = Meldnafen(components=[sdl2ui.component.DebuggerComponent],
-    mixer=sdl2ui.mixer.Mixer(frequency=44100),
+app = Meldnafen(
+    components=[sdl2ui.component.DebuggerComponent],
     window_flags=getattr(sdl2, settings['window']))
 app.loop()
-del app.mixer
 del app
 if command:
     os.execvp(command[0], command)
