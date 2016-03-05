@@ -71,7 +71,6 @@ class ListRomsComponent(sdl2ui.Component):
         self.roms = []
         self.emulator = 0
         self.selected = 0
-        self.page = 0
         self.last_page = 0
         self.update_roms()
         self.bgm = self.app.play('bgm', loops=-1)
@@ -107,7 +106,6 @@ class ListRomsComponent(sdl2ui.Component):
             os.listdir(settings['emulators'][self.emulator]['path'])))
         self.last_page = ceil(len(self.roms) / self.page_size)
         self.selected = 0
-        self.page = 0
 
     def peek(self):
         if self.app.keys[sdl2.SDL_SCANCODE_UP]:
