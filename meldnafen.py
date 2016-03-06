@@ -198,6 +198,11 @@ class Joystick(sdl2ui.ext.joystick.BaseKeyboardJoystick):
         for button, scancode_name in settings['joystick']
     }
 
+    def init(self):
+        super(Joystick, self).init()
+        sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1")
+
+
 class Meldnafen(sdl2ui.App):
     width = 256
     height = 224
