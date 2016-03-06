@@ -216,7 +216,7 @@ class Meldnafen(sdl2ui.App):
             random.choice(os.listdir(settings['musics'])))),
     ]
     renderer_flags = sdl2.SDL_RENDERER_SOFTWARE
-    init_flags = sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_AUDIO
+    init_flags = sdl2.SDL_INIT_VIDEO
 
 
 logging.basicConfig(level=logging.DEBUG)
