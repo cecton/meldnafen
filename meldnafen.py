@@ -31,7 +31,7 @@ class MenuComponent(sdl2ui.Component):
     def run_command(self):
         global command
         _, command = settings['menu_actions'][self.select]
-        self.app.quit = True
+        self.app.quit()
 
     def peek(self):
         if self.app.keys[sdl2.SDL_SCANCODE_UP]:
@@ -82,7 +82,7 @@ class ListRomsComponent(sdl2ui.Component):
         os.chdir(settings['emulators'][self.emulator]['path'])
         command = settings['emulators'][self.emulator]['exec'] + \
             [self.roms[self.selected]]
-        self.app.quit = True
+        self.app.quit()
 
     def update_roms(self):
         includes = [
@@ -182,7 +182,7 @@ class MainComponent(sdl2ui.Component):
             self.app.components[MenuComponent].toggle()
         elif self.app.keys[sdl2.SDL_SCANCODE_Q]:
             self.app.keys[sdl2.SDL_SCANCODE_Q] = sdl2.SDL_FALSE
-            self.app.quit = True
+            self.app.quit()
         else:
             return False
         return True
