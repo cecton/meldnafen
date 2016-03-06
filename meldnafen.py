@@ -200,7 +200,7 @@ class Joystick(sdl2ui.ext.joystick.BaseKeyboardJoystick):
 
     def init(self):
         super(Joystick, self).init()
-        sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1")
+        sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
 
 
 class Meldnafen(sdl2ui.App):
