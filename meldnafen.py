@@ -218,6 +218,9 @@ class Meldnafen(sdl2ui.App):
     renderer_flags = sdl2.SDL_RENDERER_SOFTWARE
     init_flags = sdl2.SDL_INIT_VIDEO
 
+    def init(self):
+        sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
+
 
 logging.basicConfig(level=logging.DEBUG)
 app = Meldnafen(
