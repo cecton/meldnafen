@@ -224,11 +224,9 @@ class Meldnafen(sdl2ui.App):
 
 
 logging.basicConfig(level=logging.DEBUG)
-app = Meldnafen(
+Meldnafen.run(
     components=[sdl2ui.component.DebuggerComponent],
     window_flags=getattr(sdl2, settings['window']))
-app.loop()
-del app
 if command:
     os.execvp(command[0], command)
 exit(1)
