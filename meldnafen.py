@@ -136,7 +136,8 @@ class ListRomsComponent(sdl2ui.Component):
             self.update_roms()
         elif self.app.keys[sdl2.SDL_SCANCODE_RETURN]:
             self.app.keys[sdl2.SDL_SCANCODE_RETURN] = sdl2.SDL_FALSE
-            self.run_emulator()
+            if self.roms:
+                self.run_emulator()
         else:
             return False
         return True
