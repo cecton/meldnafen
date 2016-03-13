@@ -64,11 +64,14 @@ class MenuComponent(sdl2ui.Component):
 
 
 class ListRomsComponent(sdl2ui.Component):
+    border = 10
     page_size = 20
     line_space = 8
     highlight = (0xff, 0xff, 0x00, 0xff)
 
     def init(self):
+        self.x = int((self.app.width - 256) / 2 + self.border)
+        self.y = int((self.app.height - 224) / 2 + self.border)
         self.roms = []
         self.emulator = 0
         self.selected = 0
@@ -143,8 +146,7 @@ class ListRomsComponent(sdl2ui.Component):
         return True
 
     def render(self):
-        border = 10
-        x, y = border, border
+        x, y = self.x, self.y
         self.app.write('font-6', x, y,
             settings['emulators'][self.emulator]['name'])
         y += self.line_space * 2
@@ -205,9 +207,9 @@ class Joystick(sdl2ui.ext.joystick.BaseKeyboardJoystick):
 
 
 class Meldnafen(sdl2ui.App):
-    width = 256
-    height = 224
-    zoom = 3
+    width = settings['width']
+    height = settings['height']
+    zoom = settings['zoom']
     fps = 30
     name = "Meldnafen"
     default_extensions = [Mixer, Joystick]

@@ -1,6 +1,7 @@
 {
-  "width": 256,
-  "height": 224,
+  "width": 360,
+  "height": 240,
+  "zoom": 2,
   "window": "SDL_WINDOW_HIDDEN",
   "emulators": [
     {
