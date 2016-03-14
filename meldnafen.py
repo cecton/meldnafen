@@ -70,8 +70,8 @@ class ListRomsComponent(sdl2ui.Component):
     highlight = (0xff, 0xff, 0x00, 0xff)
 
     def init(self):
-        self.x = int((self.app.width - 256) / 2 + self.border)
-        self.y = int((self.app.height - 224) / 2 + self.border)
+        self.x = int((self.app.viewport.w - 256) / 2 + self.border)
+        self.y = int((self.app.viewport.h - 224) / 2 + self.border)
         self.roms = []
         self.emulator = 0
         self.selected = 0
