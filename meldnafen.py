@@ -207,9 +207,8 @@ class Joystick(sdl2ui.ext.joystick.BaseKeyboardJoystick):
 
 
 class Meldnafen(sdl2ui.App):
-    width = settings['width']
-    height = settings['height']
-    zoom = settings['zoom']
+    width = settings.get('width', 640)
+    height = settings.get('height', 480)
     fps = 30
     name = "Meldnafen"
     default_extensions = [Mixer, Joystick]
@@ -218,17 +217,29 @@ class Meldnafen(sdl2ui.App):
         ('bgm', os.path.join(settings['musics'],
             random.choice(os.listdir(settings['musics'])))),
     ]
+    window_flags = settings.get('window', 0)
     renderer_flags = sdl2.SDL_RENDERER_SOFTWARE
     init_flags = sdl2.SDL_INIT_VIDEO
+
+    _zoom = settings.get('zoom')
+
+    def get_zoom(self):
+        if self._zoom:
+            return self._zoom
+        else:
+            return max(min(int(self.width / 256), int(self.height / 224)), 1)
+
+    def set_zoom(self, value):
+        self._zoom = value
+
+    zoom = property(get_zoom, set_zoom)
 
     def init(self):
         sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
 
 
 logging.basicConfig(level=logging.DEBUG)
-Meldnafen.run(
-    components=[sdl2ui.component.DebuggerComponent],
-    window_flags=settings.get('window', 0))
+Meldnafen.run(components=[sdl2ui.component.DebuggerComponent])
 if command:
     os.execvp(command[0], command)
 exit(1)

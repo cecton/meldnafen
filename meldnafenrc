@@ -1,7 +1,6 @@
 {
   "width": 720,
   "height": 480,
-  "zoom": 2,
   "emulators": [
     {
         "name": "PC Engine",
