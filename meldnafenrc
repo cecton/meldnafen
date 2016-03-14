@@ -2,7 +2,6 @@
   "width": 720,
   "height": 480,
   "zoom": 2,
-  "window": "SDL_WINDOW_HIDDEN",
   "emulators": [
     {
         "name": "PC Engine",
