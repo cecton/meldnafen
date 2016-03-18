@@ -24,9 +24,12 @@ class MenuComponent(sdl2ui.Component):
     highlight = (0x00, 0x00, 0xff, 0xff)
     line_space = 8
     default_active = False
+    border = 10
 
     def init(self):
         self.select = 0
+        self.x = int((self.app.viewport.w - 256) / 2 + self.border)
+        self.y = int((self.app.viewport.h - 224) / 2 + self.border)
 
     def run_command(self):
         global command
@@ -52,8 +55,7 @@ class MenuComponent(sdl2ui.Component):
         return True
 
     def render(self):
-        border = 10
-        x, y = border, border
+        x, y = self.x, self.y
         for i, (label, _) in enumerate(settings['menu_actions']):
             if i == self.select:
                 with self.app.tint(self.highlight):
