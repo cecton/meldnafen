@@ -244,4 +244,4 @@ logging.basicConfig(level=logging.DEBUG)
 Meldnafen.run(components=[sdl2ui.component.DebuggerComponent])
 if command:
     os.execvp(command[0], command)
-exit(1)
+exit(2)
