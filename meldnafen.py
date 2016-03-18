@@ -80,7 +80,6 @@ class ListRomsComponent(sdl2ui.Component):
         self.last_page = 0
         self.update_roms()
         self.bgm = self.app.play('bgm', loops=-1)
-        self.bgm.volume /= 3
 
     def run_emulator(self):
         global command
@@ -203,10 +202,6 @@ class Joystick(sdl2ui.ext.joystick.BaseKeyboardJoystick):
         for button, scancode_name in settings['joystick']
     }
 
-    def init(self):
-        super(Joystick, self).init()
-        sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
-
 
 class Meldnafen(sdl2ui.App):
     width = settings.get('width', 640)
@@ -238,6 +233,7 @@ class Meldnafen(sdl2ui.App):
 
     def init(self):
         sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
+        sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
 
 
 logging.basicConfig(level=logging.DEBUG)
