@@ -10,7 +10,6 @@ import random
 import re
 import sdl2
 import sdl2ui
-import sdl2ui.ext.mixer
 import sdl2ui.ext.joystick
 
 
@@ -220,10 +219,6 @@ class MainComponent(sdl2ui.Component):
         return True
 
 
-class Mixer(sdl2ui.ext.mixer.Mixer):
-    frequency = 44100
-
-
 class Joystick(sdl2ui.ext.joystick.BaseKeyboardJoystick):
     mapping = {
         button: getattr(sdl2, scancode_name)
@@ -236,7 +231,7 @@ class Meldnafen(sdl2ui.App):
     height = settings.get('height', 480)
     fps = 30
     name = "Meldnafen"
-    default_extensions = [Mixer, Joystick]
+    default_extensions = [Joystick]
     default_components = [MainComponent, ListRomsComponent, MenuComponent]
     default_resources = []
     window_flags = settings.get('window', 0)
