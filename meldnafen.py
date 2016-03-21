@@ -1,7 +1,7 @@
 from __future__ import division
 
 import fnmatch
-from itertools import islice
+from itertools import islice, chain
 import json
 import logging
 from math import ceil
@@ -17,7 +17,17 @@ import sdl2ui.ext.joystick
 command = None
 with open(os.path.expanduser('~/.config/meldnafenrc')) as rc:
     settings = json.load(rc)
-    settings['musics'] = os.path.expanduser(settings['musics'])
+    if settings.get('musics'):
+        settings['musics'] = os.path.expanduser(settings['musics'])
+
+def pick_random_bgm():
+    return random.choice(
+        list(chain.from_iterable(
+            map(
+                lambda x: map(
+                    lambda y: os.path.join(x[0], y),
+                    x[2]),
+                os.walk(settings['musics'])))))
 
 
 class MenuComponent(sdl2ui.Component):
@@ -65,6 +75,23 @@ class MenuComponent(sdl2ui.Component):
             y += self.line_space
 
 
+class Bgm(sdl2ui.audio.AudioDevice):
+    frequency = 44100
+    format = sdl2.AUDIO_S16MSB
+    channels = 2
+    chunksize = 4096
+
+    def init(self):
+        import vgmplayer
+        OUT, IN = os.pipe()
+        self.t = vgmplayer.PlayThread(pick_random_bgm(), IN, 100)
+        self.t.start()
+        self.stream = open(OUT, 'rb')
+
+    def callback(self, length):
+        return self.stream.read(length)
+
+
 class ListRomsComponent(sdl2ui.Component):
     border = 10
     page_size = 20
@@ -79,7 +106,8 @@ class ListRomsComponent(sdl2ui.Component):
         self.selected = 0
         self.last_page = 0
         self.update_roms()
-        self.bgm = self.app.play('bgm', loops=-1)
+        if settings.get('musics') and os.listdir(settings['musics']):
+            self.bgm = self.app.open_audio_device(Bgm)
 
     def run_emulator(self):
         global command
@@ -210,13 +238,10 @@ class Meldnafen(sdl2ui.App):
     name = "Meldnafen"
     default_extensions = [Mixer, Joystick]
     default_components = [MainComponent, ListRomsComponent, MenuComponent]
-    default_resources = [
-        ('bgm', os.path.join(settings['musics'],
-            random.choice(os.listdir(settings['musics'])))),
-    ]
+    default_resources = []
     window_flags = settings.get('window', 0)
     renderer_flags = sdl2.SDL_RENDERER_SOFTWARE
-    init_flags = sdl2.SDL_INIT_VIDEO
+    init_flags = sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_AUDIO
 
     _zoom = settings.get('zoom')
 
