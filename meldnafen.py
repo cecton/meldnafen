@@ -233,7 +233,6 @@ class Meldnafen(sdl2ui.App):
     name = "Meldnafen"
     default_extensions = [Joystick]
     default_components = [MainComponent, ListRomsComponent, MenuComponent]
-    default_resources = []
     window_flags = settings.get('window', 0)
     renderer_flags = sdl2.SDL_RENDERER_SOFTWARE
     init_flags = sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_AUDIO
