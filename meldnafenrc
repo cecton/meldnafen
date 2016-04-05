@@ -3,7 +3,7 @@
   "height": 480,
   "emulators": [
     {
-        "name": "PC Engine",
+        "name": "PC Engine / TurboGrafx-16",
         "path": "pce_roms",
         "exclude": "*.bin",
         "exec": [
@@ -16,7 +16,7 @@
         "exec": ["systemd-inhibit", "--", "mednafen"]
     },
     {
-        "name": "Mega Drive",
+        "name": "Mega Drive / Genesis",
         "path": "md_roms",
         "exec": ["systemd-inhibit", "--", "mednafen"]
     }
@@ -28,6 +28,7 @@
   ],
   "joystick": [
     [0, "SDL_SCANCODE_RETURN"],
+    [3, "SDL_SCANCODE_D"],
     [9, "SDL_SCANCODE_ESCAPE"],
     [5, "SDL_SCANCODE_PAGEUP"],
     [7, "SDL_SCANCODE_PAGEDOWN"],
