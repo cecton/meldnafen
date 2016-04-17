@@ -37,5 +37,8 @@
     [12, "SDL_SCANCODE_UP"],
     [14, "SDL_SCANCODE_DOWN"]
   ],
-  "musics": "~/bgm"
+  "musics": "~/bgm",
+  "startup": [
+    "amixer sset PCM 0dB"
+  ]
 }

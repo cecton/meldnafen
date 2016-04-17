@@ -28,6 +28,11 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             for emulator in self.props['emulators']
         ]
 
+    def startup(self):
+        if self.props.get('startup'):
+            for command in self.props['startup']:
+                os.system(command)
+
     def _pick_random_bgm(self):
         if not self.props.get('musics') or not os.listdir(self.props['musics']):
             return None
@@ -41,6 +46,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                         os.walk(self.props['musics'])))))
 
     def init(self):
+        self.startup()
         sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
         sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
         self.command = None
