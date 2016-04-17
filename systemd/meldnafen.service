@@ -1,0 +1,11 @@
+[Unit]
+Description=meldnafen
+After=systemd-user-sessions.service network.target sound.target
+
+[Service]
+ExecStart=/usr/bin/python -mmeldnafen
+Restart=always
+RestartPreventExitStatus=2
+
+[Install]
+WantedBy=default.target
