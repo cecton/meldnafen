@@ -84,6 +84,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             Controls,
             border=10,
             line_space=10,
+            countdown=8,
             on_finish=self.finish_joystick_configuration,
             controls=[
                 ('up', "Up"),
@@ -168,7 +169,8 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     def update_joystick_configuration(self, config):
         self.logger.error("update: %r", config)
 
-    def finish_joystick_configuration(self, config):
-        self.update_joystick_configuration(config)
+    def finish_joystick_configuration(self, config=None):
+        if config:
+            self.update_joystick_configuration(config)
         self.joystick_configure.disable()
         self.unlock()
