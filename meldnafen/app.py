@@ -6,7 +6,7 @@ import sdl2ui
 from sdl2ui.mixer import Mixer
 import sdl2ui.mixins
 from sdl2ui.debugger import Debugger
-from sdl2ui.joystick import KeyboardJoystick
+from sdl2ui.joystick import JoystickManager, KeyboardJoystick
 
 from meldnafen.menu import Menu
 from meldnafen.list_roms import ListRoms
@@ -70,7 +70,9 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
         sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
         self.command = None
+        self.joystick_manager = self.add_component(JoystickManager)
         self.add_component(KeyboardJoystick,
+            manager=self.joystick_manager,
             index=0,
             keyboard_mapping={
                 k: getattr(sdl2, v)
