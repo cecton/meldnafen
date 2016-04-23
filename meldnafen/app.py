@@ -1,17 +1,16 @@
 from itertools import chain
 import os
 import random
-import re
 import sdl2
 import sdl2ui
+from sdl2ui.mixer import Mixer
 import sdl2ui.mixins
 from sdl2ui.debugger import Debugger
 from sdl2ui.joystick import KeyboardJoystick
-from sdl2ui.mixer import Mixer
 
-from meldnafen.audio_devices import Bgm
 from meldnafen.menu import Menu
 from meldnafen.list_roms import ListRoms
+from meldnafen.vgm import VgmPlayer, VgmFile
 
 
 class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
@@ -22,8 +21,8 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             self.add_component(ListRoms,
                 emulator=emulator,
                 border=10,
-                page_size=20,
-                line_space=8,
+                page_size=15,
+                line_space=10,
                 highlight=(0xff, 0xff, 0x00, 0xff))
             for emulator in self.props['emulators']
         ]
@@ -45,7 +44,28 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                             x[2]),
                         os.walk(self.props['musics'])))))
 
+    def _load_bgm(self):
+        filepath = self._pick_random_bgm()
+        if filepath:
+            self.load_resource('bgm', filepath)
+        if 'bgm' not in self.resources:
+            return self.add_component(sdl2ui.NullComponent)
+        elif isinstance(self.resources['bgm'], VgmFile):
+            return self.add_component(VgmPlayer,
+                resource='bgm',
+                frequency=44100,
+                format=sdl2.AUDIO_S16MSB,
+                channels=2,
+                chunksize=4096)
+        else:
+            return self.mixer.open('bgm', loops=-1)
+
     def init(self):
+        self.mixer = self.add_component(Mixer)
+        self.load_resource('font-12', 'font-12.png')
+        self.resources['font-12'].make_font(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
+            ")[]~-_+@:/'., ")
         self.startup()
         sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
         sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
@@ -60,7 +80,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.menu = self.add_component(Menu,
             actions=self.props['menu_actions'],
             highlight=(0x00, 0x00, 0xff, 0xff),
-            line_space=8,
+            line_space=10,
             border=10)
         self.debugger = self.add_component(Debugger,
             x=self.menu.x - 8,
@@ -70,23 +90,11 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_D: self.toggle_debug_mode,
             sdl2.SDL_SCANCODE_ESCAPE: self.toggle_menu,
         }
+        self.bgm = self._load_bgm()
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
-        bgm_file = self._pick_random_bgm()
-        if bgm_file:
-            if re.search(r"(\.vgm(\.gz)|\.vgz)$", bgm_file):
-                self.bgm = self.add_component(Bgm,
-                    filepath=bgm_file,
-                    frequency=44100,
-                    format=sdl2.AUDIO_S16MSB,
-                    channels=2,
-                    chunksize=4096)
-                self.bgm.enable()
-            else:
-                self.add_component(Mixer)
-                self.load_resource('bgm', bgm_file)
-                self.bgm = self.app.play('bgm', loops=-1)
         self.set_state({'emulator': 0})
         self.emulators[0].enable()
+        self.bgm.enable()
 
     def run_command(self, command, cwd=None):
         if cwd is not None:
@@ -104,8 +112,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     def toggle_menu(self):
         self.emulators[self.state['emulator']].toggle()
         self.menu.toggle()
-        if hasattr(self, 'bgm'):
-            self.bgm.toggle()
+        self.bgm.toggle()
 
     def next_emulator(self):
         self.show_emulator((self.state['emulator'] + 1) % len(self.emulators))

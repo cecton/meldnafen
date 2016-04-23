@@ -116,10 +116,10 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def render(self):
         x, y = self.x, self.y
-        self.app.write('font-6', x, y, self.props['emulator']['name'])
+        self.app.write('font-12', x, y, self.props['emulator']['name'])
         y += self.props['line_space'] * 2
         if not self.state['roms']:
-            self.app.write('font-6', x, y, "No rom found")
+            self.app.write('font-12', x, y, "No rom found")
             return
         page, selected = divmod(
             self.state['selected'], self.props['page_size'])
@@ -129,11 +129,11 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                 (self.props['page_size'] * (page + 1)))):
             if i == selected:
                 with self.app.tint(self.props['highlight']):
-                    self.app.write('font-6', x, y, rom)
+                    self.app.write('font-12', x, y, rom)
             else:
-                self.app.write('font-6', x, y, rom)
+                self.app.write('font-12', x, y, rom)
             y += self.props['line_space']
         y += self.props['line_space']
-        self.app.write('font-6', x, y,
+        self.app.write('font-12', x, y,
             "Page %d of %d (%d roms)" % (
                 (page + 1), self.state['last_page'], len(self.state['roms'])))
