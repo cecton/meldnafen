@@ -8,8 +8,9 @@ import sdl2ui.mixins
 from sdl2ui.debugger import Debugger
 from sdl2ui.joystick import JoystickManager, KeyboardJoystick
 
-from meldnafen.menu import Menu
+from meldnafen.config.controls import Controls
 from meldnafen.list_roms import ListRoms
+from meldnafen.menu import Menu
 from meldnafen.vgm import VgmPlayer, VgmFile
 
 
@@ -71,13 +72,31 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
         self.command = None
         self.joystick_manager = self.add_component(JoystickManager)
-        self.add_component(KeyboardJoystick,
+        self.joystick = self.add_component(KeyboardJoystick,
             manager=self.joystick_manager,
             index=0,
             keyboard_mapping={
                 k: getattr(sdl2, v)
                 for k, v in self.props['joystick']
-            }).enable()
+            })
+        self.joystick.enable()
+        self.joystick_configure = self.add_component(
+            Controls,
+            border=10,
+            line_space=10,
+            countdown=8,
+            on_finish=self.finish_joystick_configuration,
+            controls=[
+                ('up', "Up"),
+                ('down', "Down"),
+                ('left', "Left"),
+                ('right', "Right"),
+                ('ok', "OK"),
+                ('cancel', "Cancel"),
+                ('menu', "Menu"),
+                ('next_page', "Next page"),
+                ('prev_page', "Previous page"),
+            ])
         self._load_emulator_components()
         self.menu = self.add_component(Menu,
             actions=self.props['menu_actions'],
@@ -91,6 +110,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_Q: self.app.quit,
             sdl2.SDL_SCANCODE_D: self.toggle_debug_mode,
             sdl2.SDL_SCANCODE_ESCAPE: self.toggle_menu,
+            sdl2.SDL_SCANCODE_J: self.app.activate_joystick_configuration,
         }
         self.bgm = self._load_bgm()
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
@@ -112,6 +132,8 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.debugger.toggle()
 
     def toggle_menu(self):
+        if self.joystick_configure.active:
+            return
         self.emulators[self.state['emulator']].toggle()
         self.menu.toggle()
         self.bgm.toggle()
@@ -126,3 +148,29 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.emulators[self.state['emulator']].disable()
         self.emulators[index].enable()
         self.set_state({'emulator': index})
+
+    def lock(self):
+        self.menu_state = self.menu.active
+        self.menu.disable()
+        self.emulators[self.state['emulator']].disable()
+        self.joystick.disable()
+
+    def unlock(self):
+        if self.menu_state:
+            self.menu.enable()
+        else:
+            self.emulators[self.state['emulator']].enable()
+        self.joystick.enable()
+
+    def activate_joystick_configuration(self):
+        self.lock()
+        self.joystick_configure.enable()
+
+    def update_joystick_configuration(self, config):
+        self.logger.error("update: %r", config)
+
+    def finish_joystick_configuration(self, config=None):
+        if config:
+            self.update_joystick_configuration(config)
+        self.joystick_configure.disable()
+        self.unlock()
