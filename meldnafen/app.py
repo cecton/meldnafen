@@ -106,7 +106,9 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 ('menu', "Menu"),
                 ('next_page', "Next page"),
                 ('prev_page', "Previous page"),
-            ])
+            ],
+            x=self.x,
+            y=self.y)
         self._load_emulator_components()
         self.debugger = self.add_component(Debugger,
             x=self.x - 8,

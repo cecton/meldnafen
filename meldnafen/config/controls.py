@@ -6,17 +6,6 @@ import sdl2ui.mixins
 
 
 class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
-    @property
-    def x(self):
-        return int((self.app.viewport.w - 256) / 2 + self.props['border'])
-
-    @property
-    def y(self):
-        return (
-            int((self.app.viewport.h - 224) / 2 + self.props['border']) +
-            self.props['line_space'] * 4
-        )
-
     def init(self):
         self.register_event_handler(
             sdl2.SDL_JOYBUTTONDOWN, self.capture_button)
@@ -42,22 +31,15 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             })
 
     def render(self):
-        self.app.write('font-12', self.x, self.y, self.state['controls'][0][1])
+        x, y = self.props['x'], self.props['y']
+        self.app.write('font-12', x, y, self.state['controls'][0][1])
 
 
 class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
-    @property
-    def x(self):
-        return int((self.app.viewport.w - 256) / 2 + self.props['border'])
-
-    @property
-    def y(self):
-        return int((self.app.viewport.h - 224) / 2 + self.props['border'])
-
     def init(self):
         self.capture = self.add_component(JoystickCapture,
-            line_space=self.props['line_space'],
-            border=self.props['border'])
+            x=self.props['x'],
+            y=self.props['y'] + self.props['line_space'] * 4)
         self.register_event_handler(sdl2.SDL_JOYDEVICEADDED, self.detect)
         self.register_event_handler(sdl2.SDL_JOYBUTTONDOWN, self.button_down)
 
@@ -115,17 +97,17 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.props['on_finish']()
 
     def render(self):
-        y = self.y
+        x, y = self.props['x'], self.props['y']
         if self.capture.active:
-            self.app.write('font-12', self.x, y, self.state['name'])
+            self.app.write('font-12', x, y, self.state['name'])
             y += 2 * self.props['line_space']
-            self.app.write('font-12', self.x, y, "Press the button...")
+            self.app.write('font-12', x, y, "Press the button...")
         else:
-            self.app.write('font-12', self.x, y,
+            self.app.write('font-12', x, y,
                 "Press any button to start configuring")
         if self.state['countdown'] <= 5:
             with self.app.tint((0xff, 0x00, 0x00, 0xff)):
                 y += 4 * self.props['line_space']
-                self.app.write('font-12', self.x, y,
+                self.app.write('font-12', x, y,
                     "Cancel configuration in %d seconds..."
                     % self.state['countdown'])
