@@ -9,6 +9,7 @@ DEFAULT_CONFIG = "~/.config/meldnafenrc"
 
 def read_config(config, overrides={}):
     settings = {
+        'border': 10,
         'width': 640,
         'height': 480,
         'fps': 30,

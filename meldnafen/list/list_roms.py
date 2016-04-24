@@ -9,17 +9,17 @@ import sdl2
 import sdl2ui
 import sdl2ui.mixins
 
+from meldnafen.list.menu import Menu
+
 
 class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
-    @property
-    def x(self):
-        return int((self.app.viewport.w - 256) / 2 + self.props['border'])
-
-    @property
-    def y(self):
-        return int((self.app.viewport.h - 224) / 2 + self.props['border'])
-
     def init(self):
+        self.menu = self.add_component(Menu,
+            actions=self.props['menu_actions'],
+            highlight=(0x00, 0x00, 0xff, 0xff),
+            line_space=10,
+            x=self.props['x'],
+            y=self.props['y'])
         self.keyboard_mapping = {
             sdl2.SDL_SCANCODE_DOWN: self.next_rom,
             sdl2.SDL_SCANCODE_UP: self.prev_rom,
@@ -28,6 +28,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_RIGHT: self.next_emulator,
             sdl2.SDL_SCANCODE_LEFT: self.prev_emulator,
             sdl2.SDL_SCANCODE_RETURN: self.run_emulator,
+            sdl2.SDL_SCANCODE_ESCAPE: self.toggle_menu,
         }
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
         self.update_list()
@@ -37,6 +38,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             self.keyboard_mapping[event.key.keysym.scancode]()
 
     def next_rom(self):
+        if self.menu.active:
+            return
         if not self.state['roms']:
             return
         self.set_state({
@@ -47,6 +50,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def prev_rom(self):
+        if self.menu.active:
+            return
         if not self.state['roms']:
             return
         self.set_state({
@@ -57,6 +62,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def next_page(self):
+        if self.menu.active:
+            return
         if not self.state['roms']:
             return
         self.set_state({
@@ -66,6 +73,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def prev_page(self):
+        if self.menu.active:
+            return
         if not self.state['roms']:
             return
         self.set_state({
@@ -74,9 +83,13 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def next_emulator(self):
+        if self.menu.active:
+            return
         self.parent.next_emulator()
 
     def prev_emulator(self):
+        if self.menu.active:
+            return
         self.parent.prev_emulator()
 
     def run_emulator(self):
@@ -86,6 +99,10 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             self.props['emulator']['exec'] +
             [self.state['roms'][self.state['selected']]],
             cwd=self.props['emulator']['path'])
+
+    def toggle_menu(self):
+        self.menu.toggle()
+        self.app.bgm.toggle()
 
     def update_list(self):
         includes = [
@@ -115,7 +132,9 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def render(self):
-        x, y = self.x, self.y
+        if self.menu.active:
+            return
+        x, y = self.props['x'], self.props['y']
         self.app.write('font-12', x, y, self.props['emulator']['name'])
         y += self.props['line_space'] * 2
         if not self.state['roms']:

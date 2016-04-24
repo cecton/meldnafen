@@ -9,13 +9,20 @@ from sdl2ui.debugger import Debugger
 from sdl2ui.joystick import JoystickManager, KeyboardJoystick
 
 from meldnafen.config.controls import Controls
-from meldnafen.list_roms import ListRoms
-from meldnafen.menu import Menu
+from meldnafen.list.list_roms import ListRoms
 from meldnafen.vgm import VgmPlayer, VgmFile
 
 
 class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     name = "Meldnafen"
+
+    @property
+    def x(self):
+        return int((self.app.viewport.w - 256) / 2 + self.props['border'])
+
+    @property
+    def y(self):
+        return int((self.app.viewport.h - 224) / 2 + self.props['border'])
 
     def _load_emulator_components(self):
         self.emulators = [
@@ -24,7 +31,10 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 border=10,
                 page_size=15,
                 line_space=10,
-                highlight=(0xff, 0xff, 0x00, 0xff))
+                highlight=(0xff, 0xff, 0x00, 0xff),
+                menu_actions=self.props['menu_actions'],
+                x=self.x,
+                y=self.y)
             for emulator in self.props['emulators']
         ]
 
@@ -98,18 +108,12 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 ('prev_page', "Previous page"),
             ])
         self._load_emulator_components()
-        self.menu = self.add_component(Menu,
-            actions=self.props['menu_actions'],
-            highlight=(0x00, 0x00, 0xff, 0xff),
-            line_space=10,
-            border=10)
         self.debugger = self.add_component(Debugger,
-            x=self.menu.x - 8,
-            y=self.menu.y - 8)
+            x=self.x - 8,
+            y=self.y - 8)
         self.keyboard_mapping = {
             sdl2.SDL_SCANCODE_Q: self.app.quit,
             sdl2.SDL_SCANCODE_D: self.toggle_debug_mode,
-            sdl2.SDL_SCANCODE_ESCAPE: self.toggle_menu,
             sdl2.SDL_SCANCODE_J: self.app.activate_joystick_configuration,
         }
         self.bgm = self._load_bgm()
@@ -131,13 +135,6 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     def toggle_debug_mode(self):
         self.debugger.toggle()
 
-    def toggle_menu(self):
-        if self.joystick_configure.active:
-            return
-        self.emulators[self.state['emulator']].toggle()
-        self.menu.toggle()
-        self.bgm.toggle()
-
     def next_emulator(self):
         self.show_emulator((self.state['emulator'] + 1) % len(self.emulators))
 
@@ -150,16 +147,11 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.set_state({'emulator': index})
 
     def lock(self):
-        self.menu_state = self.menu.active
-        self.menu.disable()
         self.emulators[self.state['emulator']].disable()
         self.joystick.disable()
 
     def unlock(self):
-        if self.menu_state:
-            self.menu.enable()
-        else:
-            self.emulators[self.state['emulator']].enable()
+        self.emulators[self.state['emulator']].enable()
         self.joystick.enable()
 
     def activate_joystick_configuration(self):

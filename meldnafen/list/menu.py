@@ -6,14 +6,6 @@ import sdl2ui.mixins
 
 
 class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
-    @property
-    def x(self):
-        return int((self.app.viewport.w - 256) / 2 + self.props['border'])
-
-    @property
-    def y(self):
-        return int((self.app.viewport.h - 224) / 2 + self.props['border'])
-
     def init(self):
         self.keyboard_mapping = {
             sdl2.SDL_SCANCODE_UP: self.previous_item,
@@ -48,7 +40,7 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def render(self):
-        x, y = self.x, self.y
+        x, y = self.props['x'], self.props['y']
         for i, (label, _) in enumerate(self.props['actions']):
             if i == self.state['select']:
                 with self.app.tint(self.props['highlight']):
