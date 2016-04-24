@@ -1,24 +1,36 @@
 {
-  "width": 720,
+  "width": 640,
   "height": 480,
   "emulators": [
     {
-        "name": "PC Engine / TurboGrafx-16",
-        "path": "pce_roms",
-        "exclude": "*.bin",
-        "exec": [
-          "systemd-inhibit", "--", "mednafen", "-force_module", "pce_fast"
-        ]
+      "name": "Nintendo Entertainment System",
+      "path": "nes_roms",
+      "exec": ["systemd-inhibit", "--", "mednafen"],
+      "controls": [
+        ["up", "Up"],
+        ["down", "Down"],
+        ["left", "Left"],
+        ["right", "Right"],
+        ["a", "A"],
+        ["b", "B"],
+        ["start", "Start"],
+        ["select", "Select"]
+      ]
     },
     {
-        "name": "Nintendo Entertainment System",
-        "path": "nes_roms",
-        "exec": ["systemd-inhibit", "--", "mednafen"]
-    },
-    {
-        "name": "Mega Drive / Genesis",
-        "path": "md_roms",
-        "exec": ["systemd-inhibit", "--", "mednafen"]
+      "name": "Mega Drive / Genesis",
+      "path": "md_roms",
+      "exec": ["systemd-inhibit", "--", "mednafen"],
+      "controls": [
+        ["up", "Up"],
+        ["down", "Down"],
+        ["left", "Left"],
+        ["right", "Right"],
+        ["a", "A"],
+        ["b", "B"],
+        ["c", "C"],
+        ["start", "Start"]
+      ]
     }
   ],
   "joystick": [

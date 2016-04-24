@@ -9,6 +9,7 @@ import sdl2
 import sdl2ui
 import sdl2ui.mixins
 
+from meldnafen.config.controls import Controls
 from meldnafen.list.menu import Menu
 
 
@@ -19,27 +20,41 @@ def bind(func, *args, **kwargs):
 
 
 class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
-    def init(self):
-        menu_actions = (
-            [
+    def generate_menu(self):
+        return [
+            ("Controls ->", "submenu", [
                 ("Controls for %(console)s",
                     "submenu", [
                         ("Configure player %s" % i, "call",
-                            bind(self.confgure_controls, 'console', i))
+                            bind(self.confgure_controls,
+                                target='console', player=i))
                         for i in range(1, 9)
                     ]),
                 ("Controls for %(game)s",
                     "submenu", [
                         ("Configure player %s" % i, "call",
-                            bind(self.confgure_controls, 'console', i))
+                            bind(self.confgure_controls,
+                                target='console', player=i))
                         for i in range(1, 9)
                     ]),
-            ]
-        )
+                ("Controls of %(app)s", "call",
+                    self.app.activate_joystick_configuration)
+            ])
+        ]
+
+    def init(self):
         self.menu = self.add_component(Menu,
-            menu=menu_actions,
+            menu=self.generate_menu(),
             highlight=(0x00, 0x00, 0xff, 0xff),
             line_space=10,
+            x=self.props['x'],
+            y=self.props['y'])
+        # NOTE: add the component to self.app, we don't want it to be
+        # deactivated when the rest of the application is disabled
+        self.joystick_configure = self.app.add_component(Controls,
+            line_space=10,
+            on_finish=self.finish_joystick_configuration,
+            controls=self.props['controls'],
             x=self.props['x'],
             y=self.props['y'])
         self.keyboard_mapping = {
@@ -57,9 +72,24 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def activate(self):
         self.update_list()
 
-    def confgure_controls(self, target, player):
+    def confgure_controls(self, **options):
         self.app.logger.info(
-            "Configure controls for %s for player: %s", target, player)
+            "Configure controls: %r", options)
+        self.set_state({
+            'controls_configuration': options
+        })
+        self.app.lock()
+        self.joystick_configure.enable()
+
+    def update_joystick_configuration(self, config):
+        self.app.logger.error("update %r: %r",
+            self.state['controls_configuration'], config)
+
+    def finish_joystick_configuration(self, config=None):
+        if config:
+            self.update_joystick_configuration(config)
+        self.joystick_configure.disable()
+        self.app.unlock()
 
     def keypress(self, event):
         if event.key.keysym.scancode in self.keyboard_mapping:
@@ -135,6 +165,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             return
         self.menu.set_state({
             'vars': {
+                'app': self.app.name,
                 'console': self.props['name'],
                 'game': self.state['roms'][self.state['selected']],
             },
