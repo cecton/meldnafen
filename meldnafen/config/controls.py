@@ -5,6 +5,9 @@ import sdl2ui.joystick
 import sdl2ui.mixins
 
 
+DEFAULT_COUNTDOWN = 8
+
+
 class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def init(self):
         self.register_event_handler(
@@ -59,17 +62,18 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             return
         self.app.joystick_manager.get(index).open()
 
+    def reset_countdown(self):
+        self.set_state({
+            'countdown': self.props.get('countdown', DEFAULT_COUNTDOWN),
+        })
+
     def activate(self):
         sdl2.SDL_JoystickUpdate()
-        self.set_state({
-            'countdown': self.props['countdown'],
-        })
+        self.reset_countdown()
         self.app.add_timer(1000, self.update_countdown)
 
     def button_down(self, event):
-        self.set_state({
-            'countdown': self.props['countdown'],
-        })
+        self.reset_countdown()
         if not self.capture.active:
             joysticks = filter(
                 lambda x: x.id == event.jdevice.which,
