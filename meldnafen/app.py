@@ -8,9 +8,23 @@ import sdl2ui.mixins
 from sdl2ui.debugger import Debugger
 from sdl2ui.joystick import JoystickManager, KeyboardJoystick
 
+import meldnafen
 from meldnafen.config.controls import Controls
 from meldnafen.list.list_roms import ListRoms
 from meldnafen.vgm import VgmPlayer, VgmFile
+
+
+JOYSTICK_ACTIONS = {
+    'up': sdl2.SDL_SCANCODE_UP,
+    'down': sdl2.SDL_SCANCODE_DOWN,
+    'left': sdl2.SDL_SCANCODE_LEFT,
+    'right': sdl2.SDL_SCANCODE_RIGHT,
+    'ok': sdl2.SDL_SCANCODE_RETURN,
+    'cancel': sdl2.SDL_SCANCODE_BACKSPACE,
+    'menu': sdl2.SDL_SCANCODE_ESCAPE,
+    'next_page': sdl2.SDL_SCANCODE_PAGEUP,
+    'prev_page': sdl2.SDL_SCANCODE_PAGEDOWN,
+}
 
 
 class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
@@ -18,11 +32,15 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
 
     @property
     def x(self):
-        return int((self.app.viewport.w - 256) / 2 + self.props['border'])
+        return int((self.app.viewport.w - 256) / 2 + self.settings['border'])
 
     @property
     def y(self):
-        return int((self.app.viewport.h - 224) / 2 + self.props['border'])
+        return int((self.app.viewport.h - 224) / 2 + self.settings['border'])
+
+    @property
+    def settings(self):
+        return self.props['settings']
 
     def _load_emulator_components(self):
         self.emulators = [
@@ -34,16 +52,19 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 highlight=(0xff, 0xff, 0x00, 0xff),
                 x=self.x,
                 y=self.y)
-            for emulator in self.props['emulators']
+            for emulator in self.settings['emulators']
         ]
 
     def startup(self):
-        if self.props.get('startup'):
-            for command in self.props['startup']:
+        if self.settings.get('startup'):
+            for command in self.settings['startup']:
                 os.system(command)
 
     def _pick_random_bgm(self):
-        if not self.props.get('musics') or not os.listdir(self.props['musics']):
+        if not self.settings.get('musics'):
+            return None
+        musics_dir = os.path.expanduser(self.settings['musics'])
+        if not os.listdir(musics_dir):
             return None
         else:
             return random.choice(
@@ -52,7 +73,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                         lambda x: map(
                             lambda y: os.path.join(x[0], y),
                             x[2]),
-                        os.walk(self.props['musics'])))))
+                        os.walk(musics_dir)))))
 
     def _load_bgm(self):
         filepath = self._pick_random_bgm()
@@ -80,19 +101,13 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
         sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
         self.command = None
+        self._load_emulator_components()
+        self.set_state({'emulator': 0})
+        self.emulators[0].enable()
         self.joystick_manager = self.add_component(JoystickManager)
-        self.joystick = self.add_component(KeyboardJoystick,
-            manager=self.joystick_manager,
-            index=0,
-            keyboard_mapping={
-                k: getattr(sdl2, v)
-                for k, v in self.props['joystick']
-            })
-        self.joystick.enable()
-        self.joystick_configure = self.add_component(
-            Controls,
-            border=10,
+        self.joystick_configure = self.add_component(Controls,
             line_space=10,
+            cancellable=False,
             countdown=8,
             on_finish=self.finish_joystick_configuration,
             controls=[
@@ -108,20 +123,32 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             ],
             x=self.x,
             y=self.y)
-        self._load_emulator_components()
+        self.joystick = self.add_component(KeyboardJoystick,
+            manager=self.joystick_manager,
+            index=0)
+        self.joystick.enable()
+        if not self.settings.get('joystick'):
+            self.activate_joystick_configuration()
+        else:
+            self.reload_joystick_configuriation()
         self.debugger = self.add_component(Debugger,
             x=self.x - 8,
             y=self.y - 8)
         self.keyboard_mapping = {
             sdl2.SDL_SCANCODE_Q: self.app.quit,
             sdl2.SDL_SCANCODE_D: self.toggle_debug_mode,
-            sdl2.SDL_SCANCODE_J: self.app.activate_joystick_configuration,
         }
         self.bgm = self._load_bgm()
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
-        self.set_state({'emulator': 0})
-        self.emulators[0].enable()
         self.bgm.enable()
+
+    def quit(self):
+        try:
+            meldnafen.write_config(self.settings)
+        except Exception:
+            raise
+            self.logger.error("Could not save configuration")
+        super(Meldnafen, self).quit()
 
     def run_command(self, command, cwd=None):
         if cwd is not None:
@@ -159,8 +186,15 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.lock()
         self.joystick_configure.enable()
 
+    def reload_joystick_configuriation(self):
+        self.joystick.load({
+            v: JOYSTICK_ACTIONS[k]
+            for k, v in self.settings['joystick'].items()
+        })
+
     def update_joystick_configuration(self, config):
-        self.logger.error("update: %r", config)
+        self.settings['joystick'] = config
+        self.reload_joystick_configuriation()
 
     def finish_joystick_configuration(self, config=None):
         if config:

@@ -27,7 +27,7 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             'x': control,
         })
         if not new_controls:
-            self.parent.stop_capture()
+            self.props['on_finish'](self.state['config'])
         else:
             self.set_state({
                 'controls': new_controls,
@@ -41,12 +41,29 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def init(self):
         self.capture = self.add_component(JoystickCapture,
+            on_finish=self.finish,
             x=self.props['x'],
             y=self.props['y'] + self.props['line_space'] * 4)
         self.register_event_handler(sdl2.SDL_JOYDEVICEADDED, self.detect)
         self.register_event_handler(sdl2.SDL_JOYBUTTONDOWN, self.button_down)
 
+    def detect(self, event):
+        index = event.jdevice.which
+        self.app.joystick_manager.get(index).open()
+
+    def activate(self):
+        for joystick in self.app.joystick_manager.joysticks.values():
+            joystick.open()
+        self.reset_countdown()
+
+    def reset_countdown(self):
+        self.set_state({
+            'countdown': self.props.get('countdown', DEFAULT_COUNTDOWN),
+        })
+
     def update_countdown(self):
+        if not self.active:
+            return
         remaining = self.state['countdown'] - 1
         self.set_state({
             'countdown': remaining,
@@ -54,23 +71,10 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         if remaining > 0:
             self.app.add_timer(1000, self.update_countdown)
         else:
-            self.cancel()
-
-    def detect(self, event):
-        index = event.jdevice.which
-        if index in self.joysticks:
-            return
-        self.app.joystick_manager.get(index).open()
-
-    def reset_countdown(self):
-        self.set_state({
-            'countdown': self.props.get('countdown', DEFAULT_COUNTDOWN),
-        })
-
-    def activate(self):
-        sdl2.SDL_JoystickUpdate()
-        self.reset_countdown()
-        self.app.add_timer(1000, self.update_countdown)
+            self.capture.disable()
+            self.reset_countdown()
+            if self.props.get('cancellable', True):
+                self.props['on_finish']()
 
     def button_down(self, event):
         self.reset_countdown()
@@ -91,14 +95,11 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             'config': {},
         })
         self.capture.enable()
+        self.app.add_timer(1000, self.update_countdown)
 
-    def stop_capture(self):
+    def finish(self, config):
         self.capture.disable()
-        self.props['on_finish'](self.capture.state['config'])
-
-    def cancel(self):
-        self.capture.disable()
-        self.props['on_finish']()
+        self.props['on_finish'](config)
 
     def render(self):
         x, y = self.props['x'], self.props['y']
