@@ -12,10 +12,32 @@ import sdl2ui.mixins
 from meldnafen.list.menu import Menu
 
 
+def bind(func, *args, **kwargs):
+    def wrapper(*calling_args, **calling_kwargs):
+        return func(*args, *calling_args, **kwargs, **calling_kwargs)
+    return wrapper
+
+
 class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def init(self):
+        menu_actions = (
+            [
+                ("Controls for %(console)s",
+                    "submenu", [
+                        ("Configure player %s" % i, "call",
+                            bind(self.confgure_controls, 'console', i))
+                        for i in range(1, 9)
+                    ]),
+                ("Controls for %(game)s",
+                    "submenu", [
+                        ("Configure player %s" % i, "call",
+                            bind(self.confgure_controls, 'console', i))
+                        for i in range(1, 9)
+                    ]),
+            ]
+        )
         self.menu = self.add_component(Menu,
-            actions=self.props['menu_actions'],
+            menu=menu_actions,
             highlight=(0x00, 0x00, 0xff, 0xff),
             line_space=10,
             x=self.props['x'],
@@ -31,7 +53,13 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_ESCAPE: self.toggle_menu,
         }
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
+
+    def activate(self):
         self.update_list()
+
+    def confgure_controls(self, target, player):
+        self.app.logger.info(
+            "Configure controls for %s for player: %s", target, player)
 
     def keypress(self, event):
         if event.key.keysym.scancode in self.keyboard_mapping:
@@ -93,14 +121,24 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.parent.prev_emulator()
 
     def run_emulator(self):
+        if self.menu.active:
+            return
         if not self.state['roms']:
             return
         self.app.run_command(
-            self.props['emulator']['exec'] +
+            self.props['exec'] +
             [self.state['roms'][self.state['selected']]],
-            cwd=self.props['emulator']['path'])
+            cwd=self.props['path'])
 
     def toggle_menu(self):
+        if not self.state['roms']:
+            return
+        self.menu.set_state({
+            'vars': {
+                'console': self.props['name'],
+                'game': self.state['roms'][self.state['selected']],
+            },
+        })
         self.menu.toggle()
         self.app.bgm.toggle()
 
@@ -108,23 +146,23 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         includes = [
             re.compile(fnmatch.translate(x))
             for x in (
-                self.props['emulator']['include'].split(';')
-                if self.props['emulator'].get('include')
+                self.props['include'].split(';')
+                if self.props.get('include')
                 else []
             )
         ]
         excludes = [
             re.compile(fnmatch.translate(x))
             for x in (
-                self.props['emulator']['exclude'].split(';')
-                if self.props['emulator'].get('exclude')
+                self.props['exclude'].split(';')
+                if self.props.get('exclude')
                 else []
             )
         ]
         roms = sorted(filter(
             lambda x: (not any(y.match(x) for y in excludes) or
                 any(y.match(x) for y in includes)),
-            os.listdir(self.props['emulator']['path'])))
+            os.listdir(self.props['path'])))
         self.set_state({
             'roms': roms,
             'last_page': ceil(len(roms) / self.props['page_size']),
@@ -135,7 +173,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         if self.menu.active:
             return
         x, y = self.props['x'], self.props['y']
-        self.app.write('font-12', x, y, self.props['emulator']['name'])
+        self.app.write('font-12', x, y, self.props['name'])
         y += self.props['line_space'] * 2
         if not self.state['roms']:
             self.app.write('font-12', x, y, "No rom found")

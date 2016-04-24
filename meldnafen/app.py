@@ -27,12 +27,11 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     def _load_emulator_components(self):
         self.emulators = [
             self.add_component(ListRoms,
-                emulator=emulator,
+                **emulator,
                 border=10,
                 page_size=15,
                 line_space=10,
                 highlight=(0xff, 0xff, 0x00, 0xff),
-                menu_actions=self.props['menu_actions'],
                 x=self.x,
                 y=self.y)
             for emulator in self.props['emulators']

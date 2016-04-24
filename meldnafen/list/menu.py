@@ -10,14 +10,32 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.keyboard_mapping = {
             sdl2.SDL_SCANCODE_UP: self.previous_item,
             sdl2.SDL_SCANCODE_DOWN: self.next_item,
-            sdl2.SDL_SCANCODE_RETURN: self.run_command,
+            sdl2.SDL_SCANCODE_RETURN: self.choose,
+            sdl2.SDL_SCANCODE_BACKSPACE: self.quit_menu,
         }
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
-        self.set_state({'select': 0})
 
-    def run_command(self):
-        _, command = self.props['actions'][self.state['select']]
-        self.app.run_command(command)
+    def activate(self):
+        self.set_state({
+            'root': self.props['menu'],
+            'previous': [],
+            'select': 0,
+        })
+
+    def choose(self):
+        _, action, value = self.state['root'][self.state['select']]
+        if action == 'submenu':
+            self.set_state({
+                'root': value,
+                'previous': self.state['previous'] + [self.state['root']],
+                'select': 0,
+            })
+        elif action == 'exec':
+            self.app.run_command(command)
+        elif action == 'call':
+            value()
+        elif action == 'quit':
+            self.app.quit()
 
     def keypress(self, event):
         if event.key.keysym.scancode in self.keyboard_mapping:
@@ -26,7 +44,7 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def previous_item(self):
         self.set_state({
             'select':
-                len(self.props['actions']) - 1
+                len(self.state['root']) - 1
                 if self.state['select'] == 0
                 else self.state['select'] - 1,
         })
@@ -35,16 +53,27 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.set_state({
             'select':
                 0
-                if self.state['select'] == len(self.props['actions']) - 1
+                if self.state['select'] == len(self.state['root']) - 1
                 else self.state['select'] + 1,
+        })
+
+    def quit_menu(self):
+        if not self.state['previous']:
+            return
+        previous = self.state['previous'].copy()
+        last = previous.pop()
+        self.set_state({
+            'root': last,
+            'previous': previous,
+            'select': 0,
         })
 
     def render(self):
         x, y = self.props['x'], self.props['y']
-        for i, (label, _) in enumerate(self.props['actions']):
+        for i, (label, _, _) in enumerate(self.state['root']):
             if i == self.state['select']:
                 with self.app.tint(self.props['highlight']):
-                    self.app.write('font-12', x, y, label)
+                    self.app.write('font-12', x, y, label % self.state['vars'])
             else:
-                self.app.write('font-12', x, y, label)
+                self.app.write('font-12', x, y, label % self.state['vars'])
             y += self.props['line_space']

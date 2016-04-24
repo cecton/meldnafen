@@ -21,11 +21,6 @@
         "exec": ["systemd-inhibit", "--", "mednafen"]
     }
   ],
-  "menu_actions": [
-    ["Shutdown", ["sudo", "systemctl", "poweroff"]],
-    ["Reboot", ["sudo", "systemctl", "reboot"]],
-    ["Quit", null]
-  ],
   "joystick": [
     [0, "SDL_SCANCODE_RETURN"],
     [3, "SDL_SCANCODE_D"],
