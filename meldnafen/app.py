@@ -10,6 +10,7 @@ from sdl2ui.joystick import JoystickManager, KeyboardJoystick
 
 import meldnafen
 from meldnafen.config.controls import Controls
+from meldnafen.consoles import consoles
 from meldnafen.list.list_roms import ListRoms
 from meldnafen.vgm import VgmPlayer, VgmFile
 
@@ -25,6 +26,13 @@ JOYSTICK_ACTIONS = {
     'next_page': sdl2.SDL_SCANCODE_PAGEUP,
     'prev_page': sdl2.SDL_SCANCODE_PAGEDOWN,
 }
+
+
+def merge_dict(*dicts):
+    result = {}
+    for d in dicts:
+        result.update(d)
+    return result
 
 
 class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
@@ -45,7 +53,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     def _load_emulator_components(self):
         self.emulators = [
             self.add_component(ListRoms,
-                **emulator,
+                **merge_dict(consoles[emulator['console']], emulator.items()),
                 border=10,
                 page_size=15,
                 line_space=10,
@@ -92,19 +100,28 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             return self.mixer.open('bgm', loops=-1)
 
     def init(self):
-        self.mixer = self.add_component(Mixer)
+        self.command = None
+        self.keyboard_mapping = {
+            sdl2.SDL_SCANCODE_Q: self.app.quit,
+            sdl2.SDL_SCANCODE_D: self.toggle_debug_mode,
+        }
+        self.startup()
+        sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
+        sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
         self.load_resource('font-12', 'font-12.png')
         self.resources['font-12'].make_font(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
             ")[]<>~-_+@:/'., ")
-        self.startup()
-        sdl2.SDL_ShowCursor(sdl2.SDL_FALSE)
-        sdl2.SDL_SetHint(sdl2.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, b"1")
-        self.command = None
-        self._load_emulator_components()
-        self.set_state({'emulator': 0})
-        self.emulators[0].enable()
+        self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
+        self.mixer = self.add_component(Mixer)
+        self.bgm = self._load_bgm()
+        self.debugger = self.add_component(Debugger,
+            x=self.x - 8,
+            y=self.y - 8)
         self.joystick_manager = self.add_component(JoystickManager)
+        self.joystick = self.add_component(KeyboardJoystick,
+            manager=self.joystick_manager,
+            index=0)
         self.joystick_configure = self.add_component(Controls,
             line_space=10,
             cancellable=False,
@@ -123,23 +140,16 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             ],
             x=self.x,
             y=self.y)
-        self.joystick = self.add_component(KeyboardJoystick,
-            manager=self.joystick_manager,
-            index=0)
+        self._load_emulator_components()
+
+    def activate(self):
+        self.set_state({'emulator': 0})
+        self.emulators[0].enable()
         self.joystick.enable()
-        if not self.settings.get('joystick'):
+        if not self.settings['controls'].get('menu'):
             self.activate_joystick_configuration()
         else:
             self.reload_joystick_configuriation()
-        self.debugger = self.add_component(Debugger,
-            x=self.x - 8,
-            y=self.y - 8)
-        self.keyboard_mapping = {
-            sdl2.SDL_SCANCODE_Q: self.app.quit,
-            sdl2.SDL_SCANCODE_D: self.toggle_debug_mode,
-        }
-        self.bgm = self._load_bgm()
-        self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
         self.bgm.enable()
 
     def quit(self):
@@ -189,11 +199,11 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     def reload_joystick_configuriation(self):
         self.joystick.load({
             v: JOYSTICK_ACTIONS[k]
-            for k, v in self.settings['joystick'].items()
+            for k, v in self.settings['controls']['menu'].items()
         })
 
     def update_joystick_configuration(self, config):
-        self.settings['joystick'] = config
+        self.settings['controls']['menu'] = config
         self.reload_joystick_configuriation()
 
     def finish_joystick_configuration(self, config=None):

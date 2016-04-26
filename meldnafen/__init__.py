@@ -3,26 +3,44 @@ import logging
 import os
 import sdl2
 
+from meldnafen.consoles import consoles
+
 
 DEFAULT_CONFIG = "~/.config/meldnafenrc"
 
 
 def read_config(config, overrides={}):
     settings = {
+        'controls': {},
         'border': 10,
         'width': 640,
         'height': 480,
         'fps': 30,
+        'emulators': [
+            {
+                'console': console,
+                'path': "~/%s_roms" % console,
+            }
+            for console in consoles.keys()
+            if os.path.isdir(os.path.expanduser("~/%s_roms" % console))
+        ],
+        'musics': "~/bgm",
     }
     with open(os.path.expanduser(config)) as rc:
-        settings.update(json.load(rc))
+        try:
+            settings.update(json.load(rc))
+        except Exception:
+            # NOTE: the configuration is broken, just wipe it
+            pass
     settings.update(overrides)
     return settings
 
 
 def write_config(settings):
+    # NOTE: serialize first in case an error occur
+    serialized = json.dumps(settings, sort_keys=True, indent=2)
     with open(os.path.expanduser(DEFAULT_CONFIG), 'wt') as rc:
-        rc.write(json.dumps(settings, sort_keys=True, indent=2))
+        rc.write(serialized)
 
 
 def start_meldnafen(**kwargs):

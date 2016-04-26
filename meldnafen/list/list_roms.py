@@ -34,15 +34,27 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             bind(self.confgure_controls,
-                                target='console', player=i))
+                                target='game', player=i))
                         for i in range(1, 9)
                     ]),
+                ("Remove controls for %(game)s", "call",
+                    self.remove_game_controls),
                 ("Controls of %(app)s", "call",
                     self.app.activate_joystick_configuration)
             ])
         ]
 
     def init(self):
+        self.keyboard_mapping = {
+            sdl2.SDL_SCANCODE_DOWN: self.next_rom,
+            sdl2.SDL_SCANCODE_UP: self.prev_rom,
+            sdl2.SDL_SCANCODE_PAGEDOWN: self.next_page,
+            sdl2.SDL_SCANCODE_PAGEUP: self.prev_page,
+            sdl2.SDL_SCANCODE_RIGHT: self.next_emulator,
+            sdl2.SDL_SCANCODE_LEFT: self.prev_emulator,
+            sdl2.SDL_SCANCODE_RETURN: self.run_emulator,
+            sdl2.SDL_SCANCODE_ESCAPE: self.toggle_menu,
+        }
         self.menu = self.add_component(Menu,
             menu=self.generate_menu(),
             highlight=(0x00, 0x00, 0xff, 0xff),
@@ -57,20 +69,14 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             controls=self.props['controls'],
             x=self.props['x'],
             y=self.props['y'])
-        self.keyboard_mapping = {
-            sdl2.SDL_SCANCODE_DOWN: self.next_rom,
-            sdl2.SDL_SCANCODE_UP: self.prev_rom,
-            sdl2.SDL_SCANCODE_PAGEDOWN: self.next_page,
-            sdl2.SDL_SCANCODE_PAGEUP: self.prev_page,
-            sdl2.SDL_SCANCODE_RIGHT: self.next_emulator,
-            sdl2.SDL_SCANCODE_LEFT: self.prev_emulator,
-            sdl2.SDL_SCANCODE_RETURN: self.run_emulator,
-            sdl2.SDL_SCANCODE_ESCAPE: self.toggle_menu,
-        }
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
 
     def activate(self):
         self.update_list()
+
+    @property
+    def game(self):
+        return self.state['roms'][self.state['selected']]
 
     def confgure_controls(self, **options):
         self.app.logger.info(
@@ -82,8 +88,26 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.joystick_configure.enable()
 
     def update_joystick_configuration(self, config):
-        self.app.logger.error("update %r: %r",
-            self.state['controls_configuration'], config)
+        target = self.state['controls_configuration']['target']
+        player = self.state['controls_configuration']['player']
+        player_config = {
+            k.format(player): v
+            for k, v in config.items()
+        }
+        if target == 'console':
+            self.app.settings.setdefault('controls', {})\
+                .setdefault(target, {})\
+                [self.props['console']] = player_config
+        else:
+            self.app.settings.setdefault('controls', {})\
+                .setdefault(target, {})\
+                .setdefault(self.props['console'], {})\
+                [self.game] = player_config
+
+    def remove_game_controls(self):
+        self.app.settings['controls']\
+            .setdefault('game', {})\
+            .pop(self.props['console'])
 
     def finish_joystick_configuration(self, config=None):
         if config:
@@ -156,9 +180,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         if not self.state['roms']:
             return
         self.app.run_command(
-            self.props['exec'] +
-            [self.state['roms'][self.state['selected']]],
-            cwd=self.props['path'])
+            self.props['exec'] + [self.game],
+            cwd=os.path.expanduser(self.props['path']))
 
     def toggle_menu(self):
         if not self.state['roms']:
@@ -167,7 +190,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             'vars': {
                 'app': self.app.name,
                 'console': self.props['name'],
-                'game': self.state['roms'][self.state['selected']],
+                'game': self.game,
             },
         })
         self.menu.toggle()
@@ -193,7 +216,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         roms = sorted(filter(
             lambda x: (not any(y.match(x) for y in excludes) or
                 any(y.match(x) for y in includes)),
-            os.listdir(self.props['path'])))
+            os.listdir(os.path.expanduser(self.props['path']))))
         self.set_state({
             'roms': roms,
             'last_page': ceil(len(roms) / self.props['page_size']),
