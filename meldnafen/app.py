@@ -72,7 +72,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         if not self.settings.get('musics'):
             return None
         musics_dir = os.path.expanduser(self.settings['musics'])
-        if not os.listdir(musics_dir):
+        if not (os.path.exists(musics_dir) and os.listdir(musics_dir)):
             return None
         else:
             return random.choice(
