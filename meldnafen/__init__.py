@@ -4,6 +4,7 @@ import os
 import sdl2
 
 from meldnafen.consoles import consoles
+from meldnafen.retroarch import prepare
 
 
 DEFAULT_CONFIG = "~/.config/meldnafenrc"
@@ -25,13 +26,16 @@ def read_config(config, overrides={}):
             if os.path.isdir(os.path.expanduser("~/%s_roms" % console))
         ],
         'musics': "~/bgm",
+        'startup': [
+            "amixer sset PCM 0dB",
+        ]
     }
-    with open(os.path.expanduser(config)) as rc:
-        try:
+    try:
+        with open(os.path.expanduser(config)) as rc:
             settings.update(json.load(rc))
-        except Exception:
-            # NOTE: the configuration is broken, just wipe it
-            pass
+    except Exception:
+        # NOTE: the configuration is broken or not accessible, just ignore it
+        pass
     settings.update(overrides)
     return settings
 
@@ -57,6 +61,7 @@ def start_meldnafen(**kwargs):
         'fps': settings['fps'],
     }
     app = Meldnafen.run(settings=settings, **props)
-    if app.command:
-        os.execvp(app.command[0], app.command)
+    if app.state['command']:
+        command = prepare(app.state['command'], app.state['controls'])
+        os.execvp(command[0], command)
     exit(2)

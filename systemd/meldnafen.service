@@ -6,6 +6,8 @@ After=systemd-user-sessions.service network.target sound.target
 ExecStart=/usr/bin/python -mmeldnafen
 Restart=always
 RestartPreventExitStatus=2
+TimeoutSec=5s
+RestartSec=3s
 
 [Install]
 WantedBy=default.target

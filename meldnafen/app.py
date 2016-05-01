@@ -11,6 +11,7 @@ from sdl2ui.joystick import JoystickManager, KeyboardJoystick
 import meldnafen
 from meldnafen.config.controls import Controls
 from meldnafen.consoles import consoles
+from meldnafen.exceptions import MissingControls
 from meldnafen.list.list_roms import ListRoms
 from meldnafen.vgm import VgmPlayer, VgmFile
 
@@ -23,8 +24,8 @@ JOYSTICK_ACTIONS = {
     'ok': sdl2.SDL_SCANCODE_RETURN,
     'cancel': sdl2.SDL_SCANCODE_BACKSPACE,
     'menu': sdl2.SDL_SCANCODE_ESCAPE,
-    'next_page': sdl2.SDL_SCANCODE_PAGEUP,
-    'prev_page': sdl2.SDL_SCANCODE_PAGEDOWN,
+    'next_page': sdl2.SDL_SCANCODE_PAGEDOWN,
+    'prev_page': sdl2.SDL_SCANCODE_PAGEUP,
 }
 
 
@@ -143,7 +144,11 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self._load_emulator_components()
 
     def activate(self):
-        self.set_state({'emulator': 0})
+        self.set_state({
+            'emulator': 0,
+            'command': None,
+            'controls': None,
+        })
         self.emulators[0].enable()
         self.joystick.enable()
         if not self.settings['controls'].get('menu'):
@@ -156,14 +161,23 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         try:
             meldnafen.write_config(self.settings)
         except Exception:
-            raise
             self.logger.error("Could not save configuration")
         super(Meldnafen, self).quit()
 
-    def run_command(self, command, cwd=None):
-        if cwd is not None:
-            os.chdir(cwd)
-        self.command = command
+    def run_emulator(self, console, game):
+        command = consoles[console]['exec'] + [game]
+        try:
+            controls = self.settings['controls']['console'][console].copy()
+        except KeyError:
+            raise MissingControls()
+        try:
+            controls.update(self.settings['controls']['game'][console][game])
+        except KeyError:
+            pass
+        self.set_state({
+            'command': command,
+            'controls': controls,
+        })
         self.quit()
 
     def keypress(self, event):

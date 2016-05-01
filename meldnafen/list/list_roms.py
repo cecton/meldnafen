@@ -9,6 +9,7 @@ import sdl2
 import sdl2ui
 import sdl2ui.mixins
 
+from meldnafen.exceptions import MissingControls
 from meldnafen.config.controls import Controls
 from meldnafen.list.menu import Menu
 
@@ -27,14 +28,14 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             bind(self.confgure_controls,
-                                target='console', player=i))
+                                target='console', player=str(i)))
                         for i in range(1, 9)
                     ]),
                 ("Controls for %(game)s",
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             bind(self.confgure_controls,
-                                target='game', player=i))
+                                target='game', player=str(i)))
                         for i in range(1, 9)
                     ]),
                 ("Remove controls for %(game)s", "call",
@@ -90,19 +91,17 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def update_joystick_configuration(self, config):
         target = self.state['controls_configuration']['target']
         player = self.state['controls_configuration']['player']
-        player_config = {
-            k.format(player): v
-            for k, v in config.items()
-        }
         if target == 'console':
             self.app.settings.setdefault('controls', {})\
                 .setdefault(target, {})\
-                [self.props['console']] = player_config
+                .setdefault(self.props['console'], {})\
+                [player] = config
         else:
             self.app.settings.setdefault('controls', {})\
                 .setdefault(target, {})\
                 .setdefault(self.props['console'], {})\
-                [self.game] = player_config
+                .setdefault(self.game, {})\
+                [player] = config
 
     def remove_game_controls(self):
         self.app.settings['controls']\
@@ -179,9 +178,13 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             return
         if not self.state['roms']:
             return
-        self.app.run_command(
-            self.props['exec'] + [self.game],
-            cwd=os.path.expanduser(self.props['path']))
+        try:
+            game = os.path.join(os.path.expanduser(self.props['path']), self.game)
+            self.app.run_emulator(self.props['console'], game)
+        except MissingControls as exc:
+            self.set_state({
+                'error': exc.message,
+            })
 
     def toggle_menu(self):
         if not self.state['roms']:
@@ -221,6 +224,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             'roms': roms,
             'last_page': ceil(len(roms) / self.props['page_size']),
             'selected': 0,
+            'error': 0,
         })
 
     def render(self):
@@ -248,3 +252,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.app.write('font-12', x, y,
             "Page %d of %d (%d roms)" % (
                 (page + 1), self.state['last_page'], len(self.state['roms'])))
+        if self.state['error']:
+            y += self.props['line_space']
+            with self.app.tint((0xff, 0x00, 0x00, 0xff)):
+                self.app.write('font-12', x, y, self.state['error'])
