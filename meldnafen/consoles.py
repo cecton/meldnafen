@@ -12,7 +12,7 @@ consoles = {
             ("select_btn", "Select"),
         ],
         'exec': [
-            'sudo', '-u', 'meldnafen', 'retroarch', '-L',
+            'sudo', '-u', 'meldnafen', 'retroarch', '-v', '-L',
             '/usr/lib/libretro/quicknes_libretro.so'
         ],
     },
@@ -32,7 +32,7 @@ consoles = {
             ("start_btn", "Start"),
         ],
         'exec': [
-            'sudo', '-u', 'meldnafen', 'retroarch', '-L',
+            'sudo', '-u', 'meldnafen', 'retroarch', '-v', '-L',
             '/usr/lib/libretro/mednafen_supergrafx_libretro.so'
         ],
     },
@@ -52,7 +52,7 @@ consoles = {
             ("start_btn", "Start"),
         ],
         'exec': [
-            'sudo', '-u', 'meldnafen', 'retroarch', '-L',
+            'sudo', '-u', 'meldnafen', 'retroarch', '-v', '-L',
             '/usr/lib/libretro/snes9x_next_libretro.so'
         ],
     },
@@ -72,7 +72,7 @@ consoles = {
             ("start_btn", "Start"),
         ],
         'exec': [
-            'sudo', '-u', 'meldnafen', 'retroarch', '-L',
+            'sudo', '-u', 'meldnafen', 'retroarch', '-v', '-L',
             '/usr/lib/libretro/genesis_plus_gx_libretro.so'
         ],
     },
