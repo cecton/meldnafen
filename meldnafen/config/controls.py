@@ -96,22 +96,16 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def button_down(self, event):
         if not self.capture.active:
-            joysticks = filter(
-                lambda x: x.id == event.jdevice.which,
-                self.app.joystick_manager.joysticks.values())
-            joystick = next(iter(joysticks))
+            joystick = self.app.joystick_manager.find(event.jbutton.which)
             self.start_capture(joystick)
-        elif event.jdevice.which == self.state['joystick_id']:
+        elif event.jbutton.which == self.state['joystick_id']:
             self.reset_countdown()
 
     def axis_motion(self, event):
         if not self.capture.active:
-            joysticks = filter(
-                lambda x: x.id == event.jaxis.which,
-                self.app.joystick_manager.joysticks.values())
-            joystick = next(iter(joysticks))
+            joystick = self.app.joystick_manager.find(event.jaxis.which)
             self.start_capture(joystick)
-        elif event.jdevice.which == self.state['joystick_id']:
+        elif event.jaxis.which == self.state['joystick_id']:
             self.reset_countdown()
 
     def start_capture(self, joystick):
