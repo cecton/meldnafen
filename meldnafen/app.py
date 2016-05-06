@@ -156,8 +156,8 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             'controls': None,
             'menu_joystick_connected': False,
         })
-        self.joystick.enable()
         self.bgm.enable()
+        self.unlock()
 
     def quit(self, exception=None):
         if exception is None:
@@ -185,8 +185,8 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 self.logger.debug("No joystick configuration available")
         return config
 
-    def run_emulator(self, console, game):
-        command = consoles[console]['exec'] + [game]
+    def run_emulator(self, console, path, game):
+        command = consoles[console]['exec'] + [os.path.join(path, game)]
         controls = {}
         try:
             controls.update(self.get_player_controls(
@@ -245,7 +245,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 self.activate_joystick_configuration()
         else:
             self.load_joystick_configuriation(joystick)
-            if self.joystick.available:
+            if self.joystick.available and self.joystick_configure.active:
                 self.joystick_configure.disable()
                 self.unlock()
         self.set_state({
