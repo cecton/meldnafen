@@ -1,17 +1,19 @@
 from itertools import chain
 import os
 import random
+import re
 import sdl2
 import sdl2ui
 from sdl2ui.mixer import Mixer
 import sdl2ui.mixins
 from sdl2ui.debugger import Debugger
-from sdl2ui.joystick import JoystickManager, KeyboardJoystick
+from sdl2ui.joystick import JoystickManager
 
 import meldnafen
 from meldnafen.config.controls import Controls
 from meldnafen.consoles import consoles
 from meldnafen.exceptions import MissingControls
+from meldnafen.joystick import MenuJoystick
 from meldnafen.list.list_roms import ListRoms
 from meldnafen.vgm import VgmPlayer, VgmFile
 
@@ -113,16 +115,17 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.resources['font-12'].make_font(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
             ")[]<>~-_+@:/'., ")
-        self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
         self.mixer = self.add_component(Mixer)
         self.bgm = self._load_bgm()
         self.debugger = self.add_component(Debugger,
             x=self.x - 8,
             y=self.y - 8)
         self.joystick_manager = self.add_component(JoystickManager)
-        self.joystick = self.add_component(KeyboardJoystick,
+        self.joystick = self.add_component(MenuJoystick,
             manager=self.joystick_manager,
-            index=0)
+            index=0,
+            on_joystick_added=self.menu_joystick_added,
+            on_joystick_removed=self.menu_joystick_removed)
         self.joystick_configure = self.add_component(Controls,
             line_space=10,
             cancellable=False,
@@ -142,36 +145,57 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             x=self.x,
             y=self.y)
         self._load_emulator_components()
+        self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
+        self.register_event_handler(
+            sdl2.SDL_JOYDEVICEREMOVED, self.joy_removed)
 
     def activate(self):
         self.set_state({
             'emulator': 0,
             'command': None,
             'controls': None,
+            'menu_joystick_connected': False,
         })
-        self.emulators[0].enable()
         self.joystick.enable()
-        if not self.settings['controls'].get('menu'):
-            self.activate_joystick_configuration()
-        else:
-            self.reload_joystick_configuriation()
         self.bgm.enable()
 
-    def quit(self):
-        try:
-            meldnafen.write_config(self.settings)
-        except Exception:
-            self.logger.error("Could not save configuration")
+    def quit(self, exception=None):
+        if exception is None:
+            try:
+                meldnafen.write_config(self.settings)
+            except Exception:
+                self.logger.error("Could not save configuration")
         super(Meldnafen, self).quit()
+
+    def get_player_controls(self, controls):
+        config = {}
+        for player in map(str, range(1, 9)):
+            if not player in controls:
+                continue
+            self.logger.debug("Configuring joystick for player %s...", player)
+            for index, joystick in self.joystick_manager.joysticks.items():
+                if joystick.guid in controls[player]:
+                    self.logger.debug("Found joystick %s in controls",
+                        joystick.guid)
+                    config[player] = merge_dict(
+                        {"joypad_index": index},
+                        controls[player][joystick.guid])
+                    break
+            else:
+                self.logger.debug("No joystick configuration available")
+        return config
 
     def run_emulator(self, console, game):
         command = consoles[console]['exec'] + [game]
+        controls = {}
         try:
-            controls = self.settings['controls']['console'][console].copy()
+            controls.update(self.get_player_controls(
+                self.settings['controls']['console'][console]))
         except KeyError:
             raise MissingControls()
         try:
-            controls.update(self.settings['controls']['game'][console][game])
+            controls.update(self.get_player_controls(
+                self.settings['controls']['game'][console][game]))
         except KeyError:
             pass
         self.set_state({
@@ -183,6 +207,15 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     def keypress(self, event):
         if event.key.keysym.scancode in self.keyboard_mapping:
             self.keyboard_mapping[event.key.keysym.scancode]()
+
+    def joy_removed(self, event):
+        print(self.joystick_manager.joysticks)
+        if not self.joystick_manager.joysticks:
+            self.set_state({
+                'menu_joystick_connected': False,
+            })
+            self.lock()
+            self.joystick_configure.disable()
 
     def toggle_debug_mode(self):
         self.debugger.toggle()
@@ -206,22 +239,46 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.emulators[self.state['emulator']].enable()
         self.joystick.enable()
 
+    def menu_joystick_added(self, joystick):
+        if joystick.guid not in self.settings['controls'].get('menu', {}):
+            if not self.joystick.available:
+                self.activate_joystick_configuration()
+        else:
+            self.load_joystick_configuriation(joystick)
+            if self.joystick.available:
+                self.joystick_configure.disable()
+                self.unlock()
+        self.set_state({
+            'menu_joystick_connected': True,
+        })
+
+    def menu_joystick_removed(self):
+        if self.joystick_manager.joysticks and not self.joystick.available:
+            self.activate_joystick_configuration()
+
     def activate_joystick_configuration(self):
         self.lock()
         self.joystick_configure.enable()
 
-    def reload_joystick_configuriation(self):
-        self.joystick.load({
-            v: JOYSTICK_ACTIONS[k]
-            for k, v in self.settings['controls']['menu'].items()
+    def load_joystick_configuriation(self, joystick):
+        self.joystick.load(joystick, {
+            v: JOYSTICK_ACTIONS[re.sub(r"(_btn|_axis)$", "", k)]
+            for k, v in
+                self.settings['controls']['menu'][joystick.guid].items()
         })
 
-    def update_joystick_configuration(self, config):
-        self.settings['controls']['menu'] = config
-        self.reload_joystick_configuriation()
+    def update_joystick_configuration(self, joystick, config):
+        self.settings['controls']\
+            .setdefault('menu', {})[joystick.guid] = config
+        self.load_joystick_configuriation(joystick)
 
-    def finish_joystick_configuration(self, config=None):
+    def finish_joystick_configuration(self, joystick=None, config=None):
         if config:
-            self.update_joystick_configuration(config)
+            self.update_joystick_configuration(joystick, config)
         self.joystick_configure.disable()
         self.unlock()
+
+    def render(self):
+        if not self.state['menu_joystick_connected']:
+            with self.tint((0xff, 0x00, 0x00, 0xff)):
+                self.write('font-12', self.x, self.y, "No joystick connected")

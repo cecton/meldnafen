@@ -88,29 +88,31 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.app.lock()
         self.joystick_configure.enable()
 
-    def update_joystick_configuration(self, config):
+    def update_joystick_configuration(self, joystick, config):
         target = self.state['controls_configuration']['target']
         player = self.state['controls_configuration']['player']
         if target == 'console':
             self.app.settings.setdefault('controls', {})\
                 .setdefault(target, {})\
                 .setdefault(self.props['console'], {})\
-                [player] = config
+                .setdefault(player, {})\
+                [joystick.guid] = config
         else:
             self.app.settings.setdefault('controls', {})\
                 .setdefault(target, {})\
                 .setdefault(self.props['console'], {})\
                 .setdefault(self.game, {})\
-                [player] = config
+                .setdefault(player, {})\
+                [joystick.guid] = config
 
     def remove_game_controls(self):
         self.app.settings['controls']\
             .setdefault('game', {})\
             .pop(self.props['console'])
 
-    def finish_joystick_configuration(self, config=None):
-        if config:
-            self.update_joystick_configuration(config)
+    def finish_joystick_configuration(self, joystick=None, config=None):
+        if joystick and config:
+            self.update_joystick_configuration(joystick, config)
         self.joystick_configure.disable()
         self.app.unlock()
 

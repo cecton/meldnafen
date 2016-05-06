@@ -12,15 +12,28 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def init(self):
         self.register_event_handler(
             sdl2.SDL_JOYBUTTONDOWN, self.capture_button)
+        self.register_event_handler(sdl2.SDL_JOYAXISMOTION, self.capture_axis)
 
     def capture_button(self, event):
         if not event.jbutton.which == self.state['joystick'].id:
             return
+        self.register_control("{}_btn", str(event.jbutton.button))
+
+    def capture_axis(self, event):
+        if not event.jaxis.which == self.state['joystick'].id:
+            return
+        value = event.jaxis.value
+        if value < -0x4000:
+            self.register_control("{}_axis", "-{}".format(event.jaxis.axis))
+        elif value >= 0x4000:
+            self.register_control("{}_axis", "+{}".format(event.jaxis.axis))
+
+    def register_control(self, mapping, input):
         new_controls = self.state['controls'].copy()
         control = new_controls.pop(0)
         new_config = self.state['config'].copy()
         new_config.update({
-            control[0]: event.jbutton.button,
+            mapping.format(control[0]): input,
         })
         self.set_state({
             'config': new_config,
@@ -46,6 +59,7 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             y=self.props['y'] + self.props['line_space'] * 4)
         self.register_event_handler(sdl2.SDL_JOYDEVICEADDED, self.detect)
         self.register_event_handler(sdl2.SDL_JOYBUTTONDOWN, self.button_down)
+        self.register_event_handler(sdl2.SDL_JOYAXISMOTION, self.axis_motion)
 
     def detect(self, event):
         index = event.jdevice.which
@@ -56,11 +70,17 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             joystick.open()
         self.reset_countdown()
 
+    def deactivate(self):
+        self.capture.disable()
+        self.reset_countdown()
+
     def reset_countdown(self):
         self.set_state({
             'countdown': self.props.get('countdown', DEFAULT_COUNTDOWN),
         })
 
+    # TODO: move to JoystickCapture, otherwise any joystick event can reset
+    #       the counter
     def update_countdown(self):
         if not self.active:
             return
@@ -85,9 +105,18 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             joystick = next(iter(joysticks))
             self.start_capture(joystick)
 
+    def axis_motion(self, event):
+        self.reset_countdown()
+        if not self.capture.active:
+            joysticks = filter(
+                lambda x: x.id == event.jaxis.which,
+                self.app.joystick_manager.joysticks.values())
+            joystick = next(iter(joysticks))
+            self.start_capture(joystick)
+
     def start_capture(self, joystick):
         self.set_state({
-            'name': joystick.name,
+            'joystick': joystick,
         })
         self.capture.set_state({
             'joystick': joystick,
@@ -99,12 +128,12 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def finish(self, config):
         self.capture.disable()
-        self.props['on_finish'](config)
+        self.props['on_finish'](joystick=self.state['joystick'], config=config)
 
     def render(self):
         x, y = self.props['x'], self.props['y']
         if self.capture.active:
-            self.app.write('font-12', x, y, self.state['name'])
+            self.app.write('font-12', x, y, self.state['joystick'].name)
             y += 2 * self.props['line_space']
             self.app.write('font-12', x, y, "Press the button...")
         else:
