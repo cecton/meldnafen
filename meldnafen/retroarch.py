@@ -1,3 +1,4 @@
+import re
 from tempfile import NamedTemporaryFile
 
 
@@ -11,4 +12,7 @@ def prepare(command, controls):
 
 def write_retroarch_controls(fileobj, player, controls):
     for k, v in controls.items():
-        fileobj.write("input_player{}_{} = {}\n".format(player, k, v))
+        if player == "1" and re.search(r"^(enable_hotkey|menu_toggle)", k):
+            fileobj.write("input_{} = {}\n".format(k, v))
+        else:
+            fileobj.write("input_player{}_{} = {}\n".format(player, k, v))

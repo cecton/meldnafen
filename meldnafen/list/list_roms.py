@@ -45,6 +45,26 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             ])
         ]
 
+    def load_joystick_components(self):
+        self.joystick_configure = {}
+        for player in range(1, 9):
+            controls = self.props['controls'].copy()
+            if player == 1:
+                controls.extend([
+                    ("enable_hotkey", "Emulator Hotkey"),
+                    ("menu_toggle",
+                        "Emulator Menu (after pressing the hotkey)"),
+                ])
+            # NOTE: add the component to self.app, we don't want it to be
+            # deactivated when the rest of the application is disabled
+            self.joystick_configure[str(player)] = self.app.add_component(
+                Controls,
+                line_space=10,
+                on_finish=self.finish_joystick_configuration,
+                controls=controls,
+                x=self.props['x'],
+                y=self.props['y'])
+
     def init(self):
         self.keyboard_mapping = {
             sdl2.SDL_SCANCODE_DOWN: self.next_rom,
@@ -62,14 +82,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             line_space=10,
             x=self.props['x'],
             y=self.props['y'])
-        # NOTE: add the component to self.app, we don't want it to be
-        # deactivated when the rest of the application is disabled
-        self.joystick_configure = self.app.add_component(Controls,
-            line_space=10,
-            on_finish=self.finish_joystick_configuration,
-            controls=self.props['controls'],
-            x=self.props['x'],
-            y=self.props['y'])
+        self.load_joystick_components()
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
 
     def activate(self):
@@ -79,18 +92,12 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def game(self):
         return self.state['roms'][self.state['selected']]
 
-    def confgure_controls(self, **options):
-        self.app.logger.info(
-            "Configure controls: %r", options)
-        self.set_state({
-            'controls_configuration': options
-        })
+    def confgure_controls(self, **kwargs):
         self.app.lock()
-        self.joystick_configure.enable()
+        self.joystick_configure[kwargs['player']].start(**kwargs)
 
-    def update_joystick_configuration(self, joystick, config):
-        target = self.state['controls_configuration']['target']
-        player = self.state['controls_configuration']['player']
+    def update_joystick_configuration(self,
+            joystick=None, player=None, target=None, config=None):
         if target == 'console':
             self.app.settings.setdefault('controls', {})\
                 .setdefault(target, {})\
@@ -110,10 +117,9 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             .setdefault('game', {})\
             .pop(self.props['console'])
 
-    def finish_joystick_configuration(self, joystick=None, config=None):
-        if joystick and config:
-            self.update_joystick_configuration(joystick, config)
-        self.joystick_configure.disable()
+    def finish_joystick_configuration(self, **kwargs):
+        if kwargs:
+            self.update_joystick_configuration(**kwargs)
         self.app.unlock()
 
     def keypress(self, event):

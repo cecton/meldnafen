@@ -209,7 +209,6 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             self.keyboard_mapping[event.key.keysym.scancode]()
 
     def joy_removed(self, event):
-        print(self.joystick_manager.joysticks)
         if not self.joystick_manager.joysticks:
             self.set_state({
                 'menu_joystick_connected': False,
@@ -258,7 +257,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
 
     def activate_joystick_configuration(self):
         self.lock()
-        self.joystick_configure.enable()
+        self.joystick_configure.start()
 
     def load_joystick_configuriation(self, joystick):
         self.joystick.load(joystick, {
@@ -275,7 +274,6 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
     def finish_joystick_configuration(self, joystick=None, config=None):
         if config:
             self.update_joystick_configuration(joystick, config)
-        self.joystick_configure.disable()
         self.unlock()
 
     def render(self):

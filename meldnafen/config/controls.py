@@ -40,6 +40,7 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             'x': control,
         })
         if not new_controls:
+            self.disable()
             self.props['on_finish'](self.state['config'])
         else:
             self.set_state({
@@ -60,6 +61,12 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.register_event_handler(sdl2.SDL_JOYDEVICEADDED, self.detect)
         self.register_event_handler(sdl2.SDL_JOYBUTTONDOWN, self.button_down)
         self.register_event_handler(sdl2.SDL_JOYAXISMOTION, self.axis_motion)
+
+    def start(self, **kwargs):
+        self.enable()
+        self.set_state({
+            'kwargs': kwargs,
+        })
 
     def detect(self, event):
         index = event.jdevice.which
@@ -122,8 +129,11 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.app.add_timer(1000, self.update_countdown)
 
     def finish(self, config):
-        self.capture.disable()
-        self.props['on_finish'](joystick=self.state['joystick'], config=config)
+        self.disable()
+        self.props['on_finish'](
+            joystick=self.state['joystick'],
+            config=config,
+            **self.state['kwargs'])
 
     def render(self):
         x, y = self.props['x'], self.props['y']
