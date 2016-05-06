@@ -157,7 +157,6 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             'menu_joystick_connected': False,
         })
         self.bgm.enable()
-        self.unlock()
 
     def quit(self, exception=None):
         if exception is None:
@@ -247,8 +246,9 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 self.activate_joystick_configuration()
         else:
             self.load_joystick_configuriation(joystick)
-            if self.joystick.available and self.joystick_configure.active:
-                self.joystick_configure.disable()
+            if self.joystick.available:
+                if self.joystick_configure.active:
+                    self.joystick_configure.disable()
                 self.unlock()
         self.set_state({
             'menu_joystick_connected': True,
