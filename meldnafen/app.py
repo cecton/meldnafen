@@ -100,6 +100,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 channels=2,
                 chunksize=4096)
         else:
+            self.mixer = self.add_component(Mixer)
             return self.mixer.open('bgm', loops=-1)
 
     def init(self):
@@ -115,7 +116,6 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.resources['font-12'].make_font(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
             ")[]<>~-_+@:/'., ")
-        self.mixer = self.add_component(Mixer)
         self.bgm = self._load_bgm()
         self.debugger = self.add_component(Debugger,
             x=self.x - 8,
