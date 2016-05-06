@@ -24,25 +24,26 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def generate_menu(self):
         return [
             ("Controls ->", "submenu", [
-                ("Controls for %(console)s",
+                ("Controls for {console}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             bind(self.confgure_controls,
                                 target='console', player=str(i)))
                         for i in range(1, 9)
                     ]),
-                ("Controls for %(game)s",
+                ("Controls for {game}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             bind(self.confgure_controls,
                                 target='game', player=str(i)))
                         for i in range(1, 9)
                     ]),
-                ("Remove controls for %(game)s", "call",
+                ("Remove controls for {game}", "call",
                     self.remove_game_controls),
-                ("Controls of %(app)s", "call",
+                ("Controls of {app}", "call",
                     self.app.activate_joystick_configuration)
-            ])
+            ]),
+            ("Smooth: {settings[smooth]}", "call", self.app.toggle_smooth),
         ]
 
     def load_joystick_components(self):
@@ -78,7 +79,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         }
         self.menu = self.add_component(Menu,
             menu=self.generate_menu(),
-            highlight=(0x00, 0x00, 0xff, 0xff),
+            highlight=self.props['highlight'],
             line_space=10,
             x=self.props['x'],
             y=self.props['y'])
@@ -204,6 +205,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                 'app': self.app.name,
                 'console': self.props['name'],
                 'game': self.game,
+                'settings': self.app.settings,
             },
         })
         self.menu.toggle()

@@ -17,6 +17,7 @@ def read_config(config, overrides={}):
         'width': 640,
         'height': 480,
         'fps': 30,
+        'smooth': False,
         'emulators': [
             {
                 'console': console,
@@ -62,6 +63,7 @@ def start_meldnafen(**kwargs):
     }
     app = Meldnafen.run(settings=settings, **props)
     if app.state['command']:
-        command = prepare(app.state['command'], app.state['controls'])
+        command = prepare(
+            app.state['command'], app.state['controls'], app.settings)
         os.execvp(command[0], command)
     exit(2)

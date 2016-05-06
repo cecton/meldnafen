@@ -167,6 +167,9 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 self.logger.error("Could not save configuration")
         super(Meldnafen, self).quit()
 
+    def toggle_smooth(self):
+        self.settings['smooth'] = not self.settings['smooth']
+
     def get_player_controls(self, controls):
         config = {}
         for player in map(str, range(1, 9)):

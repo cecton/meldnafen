@@ -73,7 +73,9 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         for i, (label, _, _) in enumerate(self.state['root']):
             if i == self.state['select']:
                 with self.app.tint(self.props['highlight']):
-                    self.app.write('font-12', x, y, label % self.state['vars'])
+                    self.app.write('font-12', x, y,
+                        label.format(**self.state['vars']))
             else:
-                self.app.write('font-12', x, y, label % self.state['vars'])
+                self.app.write('font-12', x, y,
+                    label.format(**self.state['vars']))
             y += self.props['line_space']

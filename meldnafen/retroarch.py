@@ -2,11 +2,15 @@ import re
 from tempfile import NamedTemporaryFile
 
 
-def prepare(command, controls):
+def prepare(command, controls, settings):
     with NamedTemporaryFile('wt', prefix='retroarch-', delete=False) as fh:
         for player, player_controls in controls.items():
             write_retroarch_controls(fh, player, player_controls)
             fh.write("\n")
+        fh.write("video_force_aspect = true\n")
+        fh.write("video_scale_integer = true\n")
+        fh.write("video_smooth = {}\n".format(
+            "true" if settings['smooth'] else "false"))
         return command + ['--appendconfig', fh.name]
 
 
