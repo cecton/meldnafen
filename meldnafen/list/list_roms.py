@@ -186,7 +186,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             return
         try:
             self.app.run_emulator(
-                self.props['console'],
+                self.props,
                 os.path.expanduser(self.props['path']),
                 self.game)
         except MissingControls as exc:

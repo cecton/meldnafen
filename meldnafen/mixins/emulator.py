@@ -59,8 +59,9 @@ class EmulatorMixin(object):
     def prev_emulator(self):
         self.show_emulator((self.state['emulator'] - 1) % len(self.emulators))
 
-    def run_emulator(self, console, path, game):
-        command = consoles[console]['exec'] + [os.path.join(path, game)]
+    def run_emulator(self, emulator, path, game):
+        console = emulator['console']
+        command = emulator['exec'] + [os.path.join(path, game)]
         controls = {}
         try:
             controls.update(self.get_player_controls(
