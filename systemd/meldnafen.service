@@ -7,7 +7,7 @@ ExecStart=/usr/bin/python -mmeldnafen
 Restart=always
 RestartPreventExitStatus=2
 TimeoutSec=5s
-RestartSec=3s
+RestartSec=0s
 
 [Install]
 WantedBy=default.target
