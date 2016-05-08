@@ -1,6 +1,7 @@
 from __future__ import division
 
 import fnmatch
+from functools import partial
 from itertools import islice
 from math import ceil
 import os
@@ -14,12 +15,6 @@ from meldnafen.config.controls import Controls
 from meldnafen.list.menu import Menu
 
 
-def bind(func, *args, **kwargs):
-    def wrapper(*calling_args, **calling_kwargs):
-        return func(*args, *calling_args, **kwargs, **calling_kwargs)
-    return wrapper
-
-
 class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def generate_menu(self):
         return [
@@ -27,14 +22,14 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                 ("Controls for {self.props[console]}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
-                            bind(self.confgure_controls,
+                            partial(self.confgure_controls,
                                 target='console', player=str(i)))
                         for i in range(1, 9)
                     ]),
                 ("Controls for {self.game}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
-                            bind(self.confgure_controls,
+                            partial(self.confgure_controls,
                                 target='game', player=str(i)))
                         for i in range(1, 9)
                     ]),
@@ -44,6 +39,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                     self.app.activate_joystick_configuration)
             ]),
             ("Smooth: {app.settings[smooth]}", "call", self.app.toggle_smooth),
+            ("FPS: {app.debugger.active}", "call", self.app.debugger.toggle),
         ]
 
     def load_joystick_components(self):
