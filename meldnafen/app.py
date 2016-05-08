@@ -62,6 +62,10 @@ class Meldnafen(
             on_joystick_removed=self.menu_joystick_removed)
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
 
+    def activate(self):
+        if self.settings['debug']:
+            self.debugger.enable()
+
     def quit(self, exception=None):
         if not isinstance(exception, Exception):
             try:

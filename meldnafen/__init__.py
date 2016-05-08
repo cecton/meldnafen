@@ -50,7 +50,8 @@ def write_config(settings):
 
 def start_meldnafen(**kwargs):
     from meldnafen.app import Meldnafen
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(
+        level=(logging.DEBUG if kwargs['debug'] else logging.INFO))
     settings = read_config(kwargs.get('config', DEFAULT_CONFIG), kwargs)
     zoom = min(int(settings['width'] / 256), int(settings['height'] / 224))
     props = {
