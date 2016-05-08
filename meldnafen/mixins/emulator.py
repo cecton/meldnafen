@@ -37,7 +37,7 @@ class EmulatorMixin(object):
     def get_player_controls(self, controls):
         self.joystick_manager.reload()
         config = {}
-        for player in map(str, range(1, 9)):
+        for player in sorted(controls.keys()):
             if not player in controls:
                 continue
             self.logger.debug("Configuring joystick for player %s...", player)

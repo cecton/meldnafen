@@ -24,14 +24,14 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                         ("Configure player %s" % i, "call",
                             partial(self.confgure_controls,
                                 target='console', player=str(i)))
-                        for i in range(1, 9)
+                        for i in range(1, self.props['players_number'] + 1)
                     ]),
                 ("Controls for {self.game}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             partial(self.confgure_controls,
                                 target='game', player=str(i)))
-                        for i in range(1, 9)
+                        for i in range(1, self.props['players_number'] + 1)
                     ]),
                 ("Remove controls for {self.game}", "call",
                     self.remove_game_controls),
@@ -44,7 +44,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def load_joystick_components(self):
         self.joystick_configure = {}
-        for player in range(1, 9):
+        for player in range(1, self.props['players_number'] + 1):
             controls = self.props['controls'].copy()
             if player == 1:
                 controls.extend([

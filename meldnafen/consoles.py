@@ -4,6 +4,7 @@ import os
 consoles = {
     'nes': {
         'name': 'Nintendo Entertainment System',
+        'players_number': 2,
         'controls': [
             ("up", "Up"),
             ("down", "Down"),
@@ -24,6 +25,7 @@ consoles = {
     },
     'pce': {
         'name': 'PC Engine & SuperGrafx',
+        'players_number': 2,
         'controls': [
             ("up", "Up"),
             ("down", "Down"),
@@ -44,6 +46,7 @@ consoles = {
     },
     'snes': {
         'name': 'Super Nintendo',
+        'players_number': 2,
         'controls': [
             ("up", "Up"),
             ("down", "Down"),
@@ -67,6 +70,7 @@ consoles = {
     },
     'md': {
         'name': 'Mega Drive / Genesis',
+        'players_number': 2,
         'controls': [
             ("up", "Up"),
             ("down", "Down"),
