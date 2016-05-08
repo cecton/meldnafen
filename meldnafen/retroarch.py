@@ -7,6 +7,7 @@ def prepare(command, controls, settings):
         for player, player_controls in controls.items():
             write_retroarch_controls(fh, player, player_controls)
             fh.write("\n")
+        fh.write("input_autodetect_enable = false\n")
         fh.write("video_force_aspect = true\n")
         fh.write("video_scale_integer = true\n")
         fh.write("video_smooth = {}\n".format(

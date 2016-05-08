@@ -13,7 +13,6 @@ consoles = {
         ],
         'exec': [
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
-            '-c', '/etc/retroarch.cfg',
             '-L', '/usr/lib/libretro/quicknes_libretro.so'
         ],
     },
@@ -31,7 +30,6 @@ consoles = {
         ],
         'exec': [
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
-            '-c', '/etc/retroarch.cfg',
             '-L', '/usr/lib/libretro/mednafen_supergrafx_libretro.so'
         ],
     },
@@ -53,7 +51,6 @@ consoles = {
         ],
         'exec': [
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
-            '-c', '/etc/retroarch.cfg',
             '-L', '/usr/lib/libretro/snes9x_next_libretro.so'
         ],
     },
@@ -74,7 +71,6 @@ consoles = {
         ],
         'exec': [
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
-            '-c', '/etc/retroarch.cfg',
             '-L', '/usr/lib/libretro/genesis_plus_gx_libretro.so'
         ],
     },
