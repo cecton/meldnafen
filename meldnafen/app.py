@@ -61,12 +61,6 @@ class Meldnafen(
             on_joystick_added=self.menu_joystick_added,
             on_joystick_removed=self.menu_joystick_removed)
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
-        BgmMixin.init(self)
-        ControlsMixin.init(self)
-        EmulatorMixin.init(self)
-
-    def activate(self):
-        self.bgm.enable()
 
     def quit(self, exception=None):
         if not isinstance(exception, Exception):

@@ -25,6 +25,9 @@ class BgmMixin:
             self.mixer = self.add_component(Mixer)
             self.bgm = self.mixer.open('bgm', loops=-1)
 
+    def activate(self):
+        self.bgm.enable()
+
     def pick_random_bgm(self):
         if not self.settings.get('musics'):
             return None
