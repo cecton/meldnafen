@@ -20,7 +20,6 @@ class EmulatorMixin(object):
         })
         self.emulators = [
             self.add_component(ListRoms,
-                **merge_dict(consoles[emulator['console']], emulator.items()),
                 border=10,
                 page_size=15,
                 line_space=10,
@@ -30,7 +29,8 @@ class EmulatorMixin(object):
                 on_next_emulator=self.next_emulator,
                 on_prev_emulator=self.prev_emulator,
                 on_menu_activated=self.bgm.disable,
-                on_menu_deactivated=self.bgm.enable)
+                on_menu_deactivated=self.bgm.enable,
+                **merge_dict(consoles[emulator['console']], emulator.items()))
             for emulator in self.settings['emulators']
         ]
 
