@@ -1,3 +1,6 @@
+import os
+
+
 consoles = {
     'nes': {
         'name': 'Nintendo Entertainment System',
@@ -13,8 +16,11 @@ consoles = {
         ],
         'exec': [
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
+            '-s', os.path.expanduser('~/save'),
+            '-S', os.path.expanduser('~/save'),
             '-L', '/usr/lib/libretro/quicknes_libretro.so'
         ],
+        'exclude': '*.ips',
     },
     'pce': {
         'name': 'PC Engine & SuperGrafx',
@@ -30,8 +36,11 @@ consoles = {
         ],
         'exec': [
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
+            '-s', os.path.expanduser('~/save'),
+            '-S', os.path.expanduser('~/save'),
             '-L', '/usr/lib/libretro/mednafen_supergrafx_libretro.so'
         ],
+        'exclude': 'syscard3.pce;*.bin',
     },
     'snes': {
         'name': 'Super Nintendo',
@@ -51,6 +60,8 @@ consoles = {
         ],
         'exec': [
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
+            '-s', os.path.expanduser('~/save'),
+            '-S', os.path.expanduser('~/save'),
             '-L', '/usr/lib/libretro/snes9x_next_libretro.so'
         ],
     },
@@ -71,6 +82,8 @@ consoles = {
         ],
         'exec': [
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
+            '-s', os.path.expanduser('~/save'),
+            '-S', os.path.expanduser('~/save'),
             '-L', '/usr/lib/libretro/genesis_plus_gx_libretro.so'
         ],
     },
