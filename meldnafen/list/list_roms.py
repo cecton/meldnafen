@@ -23,27 +23,27 @@ def bind(func, *args, **kwargs):
 class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def generate_menu(self):
         return [
-            ("Controls ->", "submenu", [
-                ("Controls for {console}",
+            ("Controls", "submenu", [
+                ("Controls for {self.props[console]}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             bind(self.confgure_controls,
                                 target='console', player=str(i)))
                         for i in range(1, 9)
                     ]),
-                ("Controls for {game}",
+                ("Controls for {self.game}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             bind(self.confgure_controls,
                                 target='game', player=str(i)))
                         for i in range(1, 9)
                     ]),
-                ("Remove controls for {game}", "call",
+                ("Remove controls for {self.game}", "call",
                     self.remove_game_controls),
-                ("Controls of {app}", "call",
+                ("Controls of {app.name}", "call",
                     self.app.activate_joystick_configuration)
             ]),
-            ("Smooth: {settings[smooth]}", "call", self.app.toggle_smooth),
+            ("Smooth: {app.settings[smooth]}", "call", self.app.toggle_smooth),
         ]
 
     def load_joystick_components(self):
@@ -75,18 +75,18 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_RIGHT: self.next_emulator,
             sdl2.SDL_SCANCODE_LEFT: self.prev_emulator,
             sdl2.SDL_SCANCODE_RETURN: self.run_emulator,
-            sdl2.SDL_SCANCODE_ESCAPE: self.toggle_menu,
+            sdl2.SDL_SCANCODE_ESCAPE: self.show_menu,
         }
         self.menu = self.add_component(Menu,
             menu=self.generate_menu(),
             highlight=self.props['highlight'],
             line_space=10,
             x=self.props['x'],
-            y=self.props['y'])
+            y=self.props['y'],
+            on_activated=self.props['on_menu_activated'],
+            on_deactivated=self.props['on_menu_deactivated'])
         self.load_joystick_components()
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
-
-    def activate(self):
         self.update_list()
 
     @property
@@ -116,7 +116,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def remove_game_controls(self):
         self.app.settings['controls']\
             .setdefault('game', {})\
-            .pop(self.props['console'])
+            .pop(self.props['console'], None)
+        self.menu.disable()
 
     def finish_joystick_configuration(self, **kwargs):
         if kwargs:
@@ -197,19 +198,18 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                 'error': exc.message,
             })
 
-    def toggle_menu(self):
+    def show_menu(self):
+        if self.menu.active:
+            return
         if not self.state['roms']:
             return
         self.menu.set_state({
             'vars': {
-                'app': self.app.name,
-                'console': self.props['name'],
-                'game': self.game,
-                'settings': self.app.settings,
+                'self': self,
+                'app': self.app,
             },
         })
-        self.menu.toggle()
-        self.app.bgm.toggle()
+        self.menu.enable()
 
     def update_list(self):
         includes = [

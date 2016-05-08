@@ -12,6 +12,7 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_DOWN: self.next_item,
             sdl2.SDL_SCANCODE_RETURN: self.choose,
             sdl2.SDL_SCANCODE_BACKSPACE: self.quit_menu,
+            sdl2.SDL_SCANCODE_ESCAPE: self.disable,
         }
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
 
@@ -21,6 +22,10 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             'previous': [],
             'select': 0,
         })
+        self.props['on_activated']()
+
+    def deactivate(self):
+        self.props['on_deactivated']()
 
     def choose(self):
         _, action, value = self.state['root'][self.state['select']]
@@ -30,12 +35,12 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                 'previous': self.state['previous'] + [self.state['root']],
                 'select': 0,
             })
-        elif action == 'exec':
-            self.app.run_command(command)
         elif action == 'call':
             value()
         elif action == 'quit':
             self.app.quit()
+        else:
+            raise NotImplementedError("no action %s does not exist" % action)
 
     def keypress(self, event):
         if event.key.keysym.scancode in self.keyboard_mapping:
@@ -59,14 +64,15 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def quit_menu(self):
         if not self.state['previous']:
-            return
-        previous = self.state['previous'].copy()
-        last = previous.pop()
-        self.set_state({
-            'root': last,
-            'previous': previous,
-            'select': 0,
-        })
+            self.disable()
+        else:
+            previous = self.state['previous'].copy()
+            last = previous.pop()
+            self.set_state({
+                'root': last,
+                'previous': previous,
+                'select': 0,
+            })
 
     def render(self):
         x, y = self.props['x'], self.props['y']

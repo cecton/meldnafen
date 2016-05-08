@@ -18,7 +18,7 @@ consoles = {
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
             '-s', os.path.expanduser('~/save'),
             '-S', os.path.expanduser('~/save'),
-            '-L', '/usr/lib/libretro/quicknes_libretro.so'
+            '-L', '/usr/lib/libretro/quicknes_libretro.so',
         ],
         'exclude': '*.ips',
     },
@@ -38,7 +38,7 @@ consoles = {
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
             '-s', os.path.expanduser('~/save'),
             '-S', os.path.expanduser('~/save'),
-            '-L', '/usr/lib/libretro/mednafen_supergrafx_libretro.so'
+            '-L', '/usr/lib/libretro/mednafen_supergrafx_libretro.so',
         ],
         'exclude': 'syscard3.pce;*.bin',
     },
@@ -62,7 +62,7 @@ consoles = {
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
             '-s', os.path.expanduser('~/save'),
             '-S', os.path.expanduser('~/save'),
-            '-L', '/usr/lib/libretro/snes9x_next_libretro.so'
+            '-L', '/usr/lib/libretro/snes9x_next_libretro.so',
         ],
     },
     'md': {
@@ -84,7 +84,7 @@ consoles = {
             'sudo', '-u', 'meldnafen', 'retroarch', '-v',
             '-s', os.path.expanduser('~/save'),
             '-S', os.path.expanduser('~/save'),
-            '-L', '/usr/lib/libretro/genesis_plus_gx_libretro.so'
+            '-L', '/usr/lib/libretro/genesis_plus_gx_libretro.so',
         ],
     },
 }

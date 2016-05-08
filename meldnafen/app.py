@@ -51,9 +51,9 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
 
     @property
     def settings(self):
-        return self.props['settings']
+        return self.state['settings']
 
-    def _load_emulator_components(self):
+    def load_emulator_components(self):
         self.emulators = [
             self.add_component(ListRoms,
                 **merge_dict(consoles[emulator['console']], emulator.items()),
@@ -64,7 +64,9 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 x=self.x,
                 y=self.y,
                 on_next_emulator=self.next_emulator,
-                on_prev_emulator=self.prev_emulator)
+                on_prev_emulator=self.prev_emulator,
+                on_menu_activated=self.bgm.disable,
+                on_menu_deactivated=self.bgm.enable)
             for emulator in self.settings['emulators']
         ]
 
@@ -73,7 +75,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             for command in self.settings['startup']:
                 os.system(command)
 
-    def _pick_random_bgm(self):
+    def pick_random_bgm(self):
         if not self.settings.get('musics'):
             return None
         musics_dir = os.path.expanduser(self.settings['musics'])
@@ -88,8 +90,8 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                             x[2]),
                         os.walk(musics_dir)))))
 
-    def _load_bgm(self):
-        filepath = self._pick_random_bgm()
+    def load_bgm(self):
+        filepath = self.pick_random_bgm()
         if filepath:
             self.load_resource('bgm', filepath)
         if 'bgm' not in self.resources:
@@ -106,6 +108,13 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             return self.mixer.open('bgm', loops=-1)
 
     def init(self):
+        self.set_state({
+            'settings': self.props['settings'].copy(),
+            'emulator': 0,
+            'command': None,
+            'controls': None,
+            'menu_joystick_connected': False,
+        })
         self.command = None
         self.keyboard_mapping = {
             sdl2.SDL_SCANCODE_Q: self.app.quit,
@@ -118,7 +127,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         self.resources['font-12'].make_font(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
             ")[]<>~-_+@:/'., ")
-        self.bgm = self._load_bgm()
+        self.bgm = self.load_bgm()
         self.debugger = self.add_component(Debugger,
             x=self.x - 8,
             y=self.y - 8)
@@ -146,18 +155,12 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
             ],
             x=self.x,
             y=self.y)
-        self._load_emulator_components()
+        self.load_emulator_components()
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
         self.register_event_handler(
             sdl2.SDL_JOYDEVICEREMOVED, self.joy_removed)
 
     def activate(self):
-        self.set_state({
-            'emulator': 0,
-            'command': None,
-            'controls': None,
-            'menu_joystick_connected': False,
-        })
         self.bgm.enable()
 
     def quit(self, exception=None):
@@ -169,7 +172,11 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         super(Meldnafen, self).quit()
 
     def toggle_smooth(self):
-        self.settings['smooth'] = not self.settings['smooth']
+        self.set_state({
+            'settings': merge_dict(
+                self.settings,
+                {'smooth': not self.settings['smooth']}),
+        })
 
     def get_player_controls(self, controls):
         self.joystick_manager.reload()
