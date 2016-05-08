@@ -62,7 +62,9 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
                 line_space=10,
                 highlight=(0xff, 0xff, 0x00, 0xff),
                 x=self.x,
-                y=self.y)
+                y=self.y,
+                on_next_emulator=self.next_emulator,
+                on_prev_emulator=self.prev_emulator)
             for emulator in self.settings['emulators']
         ]
 

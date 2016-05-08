@@ -175,12 +175,12 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def next_emulator(self):
         if self.menu.active:
             return
-        self.parent.next_emulator()
+        self.props['on_next_emulator']()
 
     def prev_emulator(self):
         if self.menu.active:
             return
-        self.parent.prev_emulator()
+        self.props['on_prev_emulator']()
 
     def run_emulator(self):
         if self.menu.active:
