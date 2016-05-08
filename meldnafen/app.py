@@ -250,8 +250,7 @@ class Meldnafen(sdl2ui.App, sdl2ui.mixins.ImmutableMixin):
         else:
             self.load_joystick_configuriation(joystick)
             if self.joystick.available:
-                if self.joystick_configure.active:
-                    self.joystick_configure.disable()
+                self.joystick_configure.disable()
                 self.unlock()
         self.set_state({
             'menu_joystick_connected': True,

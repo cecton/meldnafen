@@ -99,6 +99,7 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             self.capture.disable()
             self.reset_countdown()
             if self.props.get('cancellable', True):
+                self.disable()
                 self.props['on_finish']()
 
     def button_down(self, event):
