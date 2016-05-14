@@ -19,23 +19,23 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def generate_menu(self):
         return [
             ("Controls", "submenu", [
-                ("Controls for {self.props[console]}",
+                ("Controls: {self.props[name]}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             partial(self.confgure_controls,
                                 target='console', player=str(i)))
                         for i in range(1, self.props['players_number'] + 1)
                     ]),
-                ("Controls for {self.game}",
+                ("Controls: {self.game}",
                     "submenu", [
                         ("Configure player %s" % i, "call",
                             partial(self.confgure_controls,
                                 target='game', player=str(i)))
                         for i in range(1, self.props['players_number'] + 1)
+                    ] + [
+                        ("Clear all", "call", self.remove_game_controls),
                     ]),
-                ("Remove controls for {self.game}", "call",
-                    self.remove_game_controls),
-                ("Controls of {app.name}", "call",
+                ("Controls: {app.name}", "call",
                     self.app.activate_joystick_configuration)
             ]),
             ("Smooth: {app.settings[smooth]}", "call", self.app.toggle_smooth),
@@ -63,6 +63,10 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                 y=self.props['y'])
 
     def init(self):
+        self.logger.debug(
+            "Loading emulator %s: %d players",
+            self.props['console'],
+            self.props['players_number'])
         self.keyboard_mapping = {
             sdl2.SDL_SCANCODE_DOWN: self.next_rom,
             sdl2.SDL_SCANCODE_UP: self.prev_rom,

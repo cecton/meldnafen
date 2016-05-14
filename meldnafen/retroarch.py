@@ -4,7 +4,7 @@ from tempfile import NamedTemporaryFile
 
 def prepare(command, controls, settings):
     with NamedTemporaryFile('wt', prefix='retroarch-', delete=False) as fh:
-        for player, player_controls in controls.items():
+        for player, player_controls in sorted(controls.items()):
             write_retroarch_controls(fh, player, player_controls)
             fh.write("\n")
         fh.write("input_autodetect_enable = false\n")
