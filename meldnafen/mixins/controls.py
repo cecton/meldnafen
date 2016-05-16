@@ -9,11 +9,9 @@ JOYSTICK_ACTIONS = {
     'down': sdl2.SDL_SCANCODE_DOWN,
     'left': sdl2.SDL_SCANCODE_LEFT,
     'right': sdl2.SDL_SCANCODE_RIGHT,
-    'ok': sdl2.SDL_SCANCODE_RETURN,
+    'run': sdl2.SDL_SCANCODE_RETURN,
     'cancel': sdl2.SDL_SCANCODE_BACKSPACE,
     'menu': sdl2.SDL_SCANCODE_ESCAPE,
-    'next_page': sdl2.SDL_SCANCODE_PAGEDOWN,
-    'prev_page': sdl2.SDL_SCANCODE_PAGEUP,
 }
 
 
@@ -32,11 +30,9 @@ class ControlsMixin:
                 ('down', "Down"),
                 ('left', "Left"),
                 ('right', "Right"),
-                ('ok', "OK"),
+                ('run', "Run/Start"),
                 ('cancel', "Cancel"),
                 ('menu', "Menu"),
-                ('next_page', "Next page"),
-                ('prev_page', "Previous page"),
             ],
             x=self.x,
             y=self.y)
@@ -66,21 +62,28 @@ class ControlsMixin:
         self.unlock()
 
     def load_joystick_configuriation(self, joystick):
+        controls = self.settings['controls'].get('menu', {}).get(joystick.guid)
+        if not controls:
+            return False
+        key_bindings = {
+            re.sub(r"(_btn|_axis)$", "", k): v
+            for k, v in controls.items()
+        }
+        if set(JOYSTICK_ACTIONS) - set(key_bindings):
+            return False
         self.joystick.load(joystick, {
-            v: JOYSTICK_ACTIONS[re.sub(r"(_btn|_axis)$", "", k)]
-            for k, v in
-                self.settings['controls']['menu'][joystick.guid].items()
+            key_bindings[action]: key
+            for action, key in JOYSTICK_ACTIONS.items()
         })
+        return True
 
     def menu_joystick_added(self, joystick):
-        if joystick.guid not in self.settings['controls'].get('menu', {}):
+        if not self.load_joystick_configuriation(joystick):
             if not self.joystick.available:
                 self.activate_joystick_configuration()
         else:
-            self.load_joystick_configuriation(joystick)
-            if self.joystick.available:
-                self.joystick_configure.disable()
-                self.unlock()
+            self.joystick_configure.disable()
+            self.unlock()
         self.set_state({
             'menu_joystick_connected': True,
         })
