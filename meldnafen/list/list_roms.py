@@ -13,6 +13,7 @@ import sdl2ui.mixins
 from meldnafen.exceptions import MissingControls
 from meldnafen.config.controls import Controls
 from meldnafen.list.menu import Menu
+from meldnafen.list.select_players import SelectPlayers
 
 
 class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
@@ -72,7 +73,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_UP: self.prev_option,
             sdl2.SDL_SCANCODE_RIGHT: self.switch_right,
             sdl2.SDL_SCANCODE_LEFT: self.switch_left,
-            sdl2.SDL_SCANCODE_RETURN: self.run_emulator,
+            sdl2.SDL_SCANCODE_RETURN: self.start_players_selection,
             sdl2.SDL_SCANCODE_ESCAPE: self.show_menu,
         }
         self.menu = self.add_component(Menu,
@@ -84,6 +85,13 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             on_activated=self.props['on_menu_activated'],
             on_deactivated=self.props['on_menu_deactivated'])
         self.load_joystick_components()
+        self.select_players = self.add_component(SelectPlayers,
+            highlight=self.props['highlight'],
+            line_space=10,
+            x=self.props['x'],
+            y=self.props['y'],
+            on_select=self.run_emulator,
+            on_return=self.enable)
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
         self.update_list()
 
@@ -129,7 +137,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             self.keyboard_mapping[event.key.keysym.scancode]()
 
     def next_option(self):
-        if self.menu.active:
+        if self.menu.active or self.select_players.active:
             return
         if not self.state['roms']:
             return
@@ -144,7 +152,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def prev_option(self):
-        if self.menu.active:
+        if self.menu.active or self.select_players.active:
             return
         if not self.state['roms']:
             return
@@ -155,20 +163,22 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def switch_right(self):
+        if self.menu.active or self.select_players.active:
+            return
         if self.state['select'] == -1:
             self.next_emulator()
         else:
             self.next_page()
 
     def switch_left(self):
+        if self.menu.active or self.select_players.active:
+            return
         if self.state['select'] == -1:
             self.prev_emulator()
         else:
             self.prev_page()
 
     def next_page(self):
-        if self.menu.active:
-            return
         if not self.state['roms']:
             return
         if self.state['page'] == self.state['last_page']:
@@ -184,8 +194,6 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             })
 
     def prev_page(self):
-        if self.menu.active:
-            return
         if not self.state['roms']:
             return
         if self.state['page'] == 0:
@@ -195,32 +203,32 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def next_emulator(self):
-        if self.menu.active:
-            return
         self.props['on_next_emulator']()
 
     def prev_emulator(self):
-        if self.menu.active:
-            return
         self.props['on_prev_emulator']()
 
-    def run_emulator(self):
-        if self.menu.active:
+    def start_players_selection(self):
+        if self.menu.active or self.select_players.active:
             return
+        self.select_players.start(self.props['players_number'])
+
+    def run_emulator(self, players):
         if not self.state['roms']:
             return
         try:
             self.app.run_emulator(
                 self.props,
                 os.path.expanduser(self.props['path']),
-                self.game)
+                self.game,
+                players)
         except MissingControls as exc:
             self.set_state({
                 'error': exc.message,
             })
 
     def show_menu(self):
-        if self.menu.active:
+        if self.menu.active or self.select_players.active:
             return
         if not self.state['roms']:
             return
@@ -262,7 +270,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
 
     def render(self):
-        if self.menu.active:
+        if self.menu.active or self.select_players.active:
             return
         x, y = self.props['x'], self.props['y']
         if self.state['select'] == -1:

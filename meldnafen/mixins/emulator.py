@@ -34,19 +34,19 @@ class EmulatorMixin(object):
             for emulator in self.settings['emulators']
         ]
 
-    def get_player_controls(self, controls):
+    def get_player_controls(self, controls, max_players):
         self.joystick_manager.reload()
         config = {}
-        for player in sorted(controls.keys()):
+        for player in map(str, range(1, max_players + 1)):
             if not player in controls:
                 continue
             self.logger.debug("Configuring joystick for player %s...", player)
-            for index, joystick in self.joystick_manager.joysticks.items():
+            for joystick in self.joystick_manager.joysticks:
                 if joystick.guid in controls[player]:
                     self.logger.debug("Found joystick %s in controls",
                         joystick.guid)
                     config[player] = merge_dict(
-                        {"joypad_index": index},
+                        {"joypad_index": joystick.index},
                         controls[player][joystick.guid])
                     break
             else:
@@ -59,19 +59,19 @@ class EmulatorMixin(object):
     def prev_emulator(self):
         self.show_emulator((self.state['emulator'] - 1) % len(self.emulators))
 
-    def run_emulator(self, emulator, path, game):
+    def run_emulator(self, emulator, path, game, players):
         console = emulator['console']
         command = emulator['exec'] + [os.path.join(path, game)]
         self.logger.debug("Run command: %s", " ".join(command))
         controls = {}
         try:
             controls.update(self.get_player_controls(
-                self.settings['controls']['console'][console]))
+                self.settings['controls']['console'][console], players))
         except KeyError:
             raise MissingControls()
         try:
             controls.update(self.get_player_controls(
-                self.settings['controls']['game'][console][game]))
+                self.settings['controls']['game'][console][game], players))
         except KeyError:
             pass
         self.set_state({
