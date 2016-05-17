@@ -1,9 +1,10 @@
 import logging
 import sdl2
 import sdl2ui
+import sdl2ui.mixins
 
 
-class MenuJoystick(sdl2ui.Component):
+class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     logger = logging.getLogger(__name__)
 
     def init(self):
