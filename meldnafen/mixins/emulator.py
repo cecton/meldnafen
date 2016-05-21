@@ -41,7 +41,7 @@ class EmulatorMixin(object):
             if not player in controls:
                 continue
             self.logger.debug("Configuring joystick for player %s...", player)
-            for index, joystick in self.joystick_manager.joysticks.items():
+            for index, joystick in enumerate(self.joystick_manager.joysticks):
                 if joystick.guid in controls[player]:
                     self.logger.debug("Found joystick %s in controls",
                         joystick.guid)

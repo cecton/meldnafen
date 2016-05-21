@@ -27,7 +27,7 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         joystick = self.joysticks.get(event.jdevice.which)
         if not joystick:
             return
-        self.logger.debug("Joystick %d removed", joystick.index)
+        self.logger.debug("Joystick removed: %s", joystick.name)
         joystick.close()
         self.joysticks.pop(joystick.id)
         self.props['on_joystick_removed']()
