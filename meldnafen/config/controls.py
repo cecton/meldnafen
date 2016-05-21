@@ -73,7 +73,7 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.app.joystick_manager.get(index).open()
 
     def activate(self):
-        for joystick in self.app.joystick_manager.joysticks.values():
+        for joystick in self.app.joystick_manager.joysticks:
             joystick.open()
         self.reset_countdown()
 
