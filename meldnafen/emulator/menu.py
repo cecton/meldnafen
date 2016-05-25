@@ -12,20 +12,18 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_DOWN: self.next_item,
             sdl2.SDL_SCANCODE_RETURN: self.choose,
             sdl2.SDL_SCANCODE_BACKSPACE: self.quit_menu,
-            sdl2.SDL_SCANCODE_ESCAPE: self.disable,
+            sdl2.SDL_SCANCODE_ESCAPE: self.props['on_quit'],
         }
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
 
-    def activate(self):
+    def start(self, vars):
         self.set_state({
             'root': self.props['menu'],
             'previous': [],
             'select': 0,
+            'vars': vars,
         })
-        self.props['on_activated']()
-
-    def deactivate(self):
-        self.props['on_deactivated']()
+        self.enable()
 
     def choose(self):
         _, action, value = self.state['root'][self.state['select']]
@@ -64,7 +62,7 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def quit_menu(self):
         if not self.state['previous']:
-            self.disable()
+            self.props['on_quit']()
         else:
             previous = self.state['previous'].copy()
             last = previous.pop()

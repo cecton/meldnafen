@@ -2,7 +2,7 @@ import os
 
 from meldnafen.consoles import consoles
 from meldnafen.exceptions import MissingControls
-from meldnafen.list.list_roms import ListRoms
+from meldnafen.emulator import Emulator
 
 
 def merge_dict(*dicts):
@@ -19,7 +19,7 @@ class EmulatorMixin(object):
             'command': None,
         })
         self.emulators = [
-            self.add_component(ListRoms,
+            self.add_component(Emulator,
                 border=10,
                 page_size=15,
                 line_space=10,
