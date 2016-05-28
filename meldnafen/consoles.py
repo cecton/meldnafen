@@ -70,7 +70,7 @@ consoles = {
     },
     'md': {
         'name': 'Mega Drive / Genesis',
-        'players_number': 2,
+        'players_number': 4,
         'controls': [
             ("up", "Up"),
             ("down", "Down"),
