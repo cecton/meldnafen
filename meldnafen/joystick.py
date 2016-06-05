@@ -19,6 +19,9 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         })
         self.joysticks = {}
 
+    def activate(self):
+        self.axis_change = {}
+
     def added(self, event):
         joystick = self.props['manager'].get(event.jdevice.which)
         self.props['on_joystick_added'](joystick)
@@ -70,21 +73,21 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def axis_motion(self, event):
         if event.jbutton.which not in self.joysticks:
             return
-        mapping = self.state['keyboard_mapping'].get(event.jbutton.which)
+        mapping = self.state['keyboard_mapping'].get(event.jaxis.which)
         if not mapping:
             return
         value = event.jaxis.value
-        if value < -0x4000:
-            axis = "-{}".format(event.jaxis.axis)
-        elif value >= 0x4000:
-            axis = "+{}".format(event.jaxis.axis)
-        else:
-            return
-        key = mapping.get(axis)
-        if key:
-            self.app.keys[key] = sdl2.SDL_TRUE
-            self._push_keyboard_event(key)
-        else:
-            self.logger.debug(
-                "Axis %s on joystick %d not mapped",
-                axis, self.joysticks[event.jbutton.which].index)
+        if value < -0x7000:
+            self.axis_change[event.jaxis.which] = "-{}".format(event.jaxis.axis)
+        elif value >= 0x7000:
+            self.axis_change[event.jaxis.which] = "+{}".format(event.jaxis.axis)
+        elif value == 0 and self.axis_change.get(event.jaxis.which):
+            key = mapping.get(self.axis_change[event.jaxis.which])
+            if key:
+                self.app.keys[key] = sdl2.SDL_TRUE
+                self._push_keyboard_event(key)
+            else:
+                self.logger.debug(
+                    "Axis %s on joystick %d not mapped",
+                    self.axis_change[event.jaxis.which], self.joysticks[event.jaxis.which].index)
+            self.axis_change[event.jaxis.which] = None

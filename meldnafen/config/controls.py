@@ -14,8 +14,13 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_JOYBUTTONDOWN, self.capture_button)
         self.register_event_handler(sdl2.SDL_JOYAXISMOTION, self.capture_axis)
 
+    def activate(self):
+        self.axis_change = None
+
     def capture_button(self, event):
         if not event.jbutton.which == self.state['joystick'].id:
+            return
+        if self.axis_change is not None:
             return
         self.register_control("{}_btn", str(event.jbutton.button))
 
@@ -23,10 +28,13 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         if not event.jaxis.which == self.state['joystick'].id:
             return
         value = event.jaxis.value
-        if value < -0x4000:
-            self.register_control("{}_axis", "-{}".format(event.jaxis.axis))
-        elif value >= 0x4000:
-            self.register_control("{}_axis", "+{}".format(event.jaxis.axis))
+        if value < -0x7000:
+            self.axis_change = "-{}".format(event.jaxis.axis)
+        elif value >= 0x7000:
+            self.axis_change = "+{}".format(event.jaxis.axis)
+        elif value == 0 and self.axis_change:
+            self.register_control("{}_axis", self.axis_change)
+            self.axis_change = None
 
     def register_control(self, mapping, input):
         new_controls = self.state['controls'].copy()
@@ -110,10 +118,7 @@ class Controls(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             self.reset_countdown()
 
     def axis_motion(self, event):
-        if not self.capture.active:
-            joystick = self.app.joystick_manager.find(event.jaxis.which)
-            self.start_capture(joystick)
-        elif event.jaxis.which == self.state['joystick_id']:
+        if self.capture.active and event.jaxis.which == self.state['joystick_id']:
             self.reset_countdown()
 
     def start_capture(self, joystick):
