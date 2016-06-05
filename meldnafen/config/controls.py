@@ -13,9 +13,11 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.register_event_handler(
             sdl2.SDL_JOYBUTTONDOWN, self.capture_button)
         self.register_event_handler(sdl2.SDL_JOYAXISMOTION, self.capture_axis)
+        self.register_event_handler(sdl2.SDL_JOYHATMOTION, self.hat_motion)
 
     def activate(self):
         self.axis_change = None
+        self.hat_change = None
 
     def capture_button(self, event):
         if not event.jbutton.which == self.state['joystick'].id:
@@ -35,6 +37,22 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         elif value == 0 and self.axis_change:
             self.register_control("{}_axis", self.axis_change)
             self.axis_change = None
+
+    def hat_motion(self, event):
+        if not event.jhat.which == self.state['joystick'].id:
+            return
+        value = event.jhat.value
+        if value == sdl2.SDL_HAT_UP:
+            self.hat_change = "h{}up".format(event.jhat.hat)
+        elif value == sdl2.SDL_HAT_DOWN:
+            self.hat_change = "h{}down".format(event.jhat.hat)
+        elif value == sdl2.SDL_HAT_LEFT:
+            self.hat_change = "h{}left".format(event.jhat.hat)
+        elif value == sdl2.SDL_HAT_RIGHT:
+            self.hat_change = "h{}right".format(event.jhat.hat)
+        elif value == sdl2.SDL_HAT_CENTERED and self.hat_change:
+            self.register_control("{}_btn", self.hat_change)
+            self.hat_change = None
 
     def register_control(self, mapping, input):
         new_controls = self.state['controls'].copy()

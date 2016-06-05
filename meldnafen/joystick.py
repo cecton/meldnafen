@@ -14,6 +14,7 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_JOYDEVICEREMOVED, self.removed)
         self.register_event_handler(sdl2.SDL_JOYBUTTONDOWN, self.button_down)
         self.register_event_handler(sdl2.SDL_JOYAXISMOTION, self.axis_motion)
+        self.register_event_handler(sdl2.SDL_JOYHATMOTION, self.hat_motion)
         self.set_state({
             'keyboard_mapping': {},
         })
@@ -21,6 +22,7 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def activate(self):
         self.axis_change = {}
+        self.hat_change = {}
 
     def added(self, event):
         joystick = self.props['manager'].get(event.jdevice.which)
@@ -91,3 +93,29 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                     "Axis %s on joystick %d not mapped",
                     self.axis_change[event.jaxis.which], self.joysticks[event.jaxis.which].index)
             self.axis_change[event.jaxis.which] = None
+
+    def hat_motion(self, event):
+        if event.jhat.which not in self.joysticks:
+            return
+        mapping = self.state['keyboard_mapping'].get(event.jhat.which)
+        if not mapping:
+            return
+        value = event.jhat.value
+        if value == sdl2.SDL_HAT_UP:
+            self.hat_change[event.jhat.which] = "h{}up".format(event.jhat.hat)
+        elif value == sdl2.SDL_HAT_DOWN:
+            self.hat_change[event.jhat.which] = "h{}down".format(event.jhat.hat)
+        elif value == sdl2.SDL_HAT_LEFT:
+            self.hat_change[event.jhat.which] = "h{}left".format(event.jhat.hat)
+        elif value == sdl2.SDL_HAT_RIGHT:
+            self.hat_change[event.jhat.which] = "h{}right".format(event.jhat.hat)
+        elif value == sdl2.SDL_HAT_CENTERED and self.hat_change:
+            key = mapping.get(self.hat_change[event.jhat.which])
+            if key:
+                self.app.keys[key] = sdl2.SDL_TRUE
+                self._push_keyboard_event(key)
+            else:
+                self.logger.debug(
+                    "Hat %s on joystick %d not mapped",
+                    self.hat_change[event.jhat.which], self.joysticks[event.jhat.which].index)
+            self.hat_change[event.jhat.which] = None
