@@ -18,6 +18,10 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def activate(self):
         self.axis_change = None
         self.hat_change = None
+        self.capture = True
+
+    def reset_capture(self):
+        self.capture = True
 
     def capture_button(self, event):
         if not event.jbutton.which == self.state['joystick'].id:
@@ -55,6 +59,10 @@ class JoystickCapture(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             self.hat_change = None
 
     def register_control(self, mapping, input):
+        if not self.capture:
+            return
+        self.capture = False
+        self.app.add_timer(100, self.reset_capture)
         new_controls = self.state['controls'].copy()
         control = new_controls.pop(0)
         new_config = self.state['config'].copy()
