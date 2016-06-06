@@ -79,9 +79,9 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         if not mapping:
             return
         value = event.jaxis.value
-        if value < -0x7000:
+        if value < -0x4000:
             self.axis_change[event.jaxis.which] = "-{}".format(event.jaxis.axis)
-        elif value >= 0x7000:
+        elif value >= 0x4000:
             self.axis_change[event.jaxis.which] = "+{}".format(event.jaxis.axis)
         elif value == 0 and self.axis_change.get(event.jaxis.which):
             key = mapping.get(self.axis_change[event.jaxis.which])
