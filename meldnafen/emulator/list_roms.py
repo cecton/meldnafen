@@ -41,7 +41,7 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         if self.state['page'] == self.state['last_page']:
             edge = len(self.state['roms']) % self.props['page_size']
         else:
-            edge = self.props['page_size']
+            edge = self.props['page_size'] + 1
         if self.state['select'] == edge - 1:
             return
         self.set_state({
@@ -102,6 +102,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def run_emulator(self):
         if not self.state['roms']:
             return
+        if not -1 < self.state['select'] < self.props['page_size']:
+            return
         try:
             self.app.run_emulator(
                 self.props,
@@ -114,6 +116,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def show_menu(self):
         if not self.state['roms']:
+            return
+        if not -1 < self.state['select'] < self.props['page_size']:
             return
         self.props['show_menu']({
             'game': self.game,
@@ -149,6 +153,17 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             'error': None,
         })
 
+    def render_footer(self, x, y):
+        if self.state['last_page'] > 0:
+            self.app.write('font-12', x, y,
+                "< Page {} of {} ({} roms) >".format(
+                (self.state['page'] + 1),
+                self.state['last_page'] + 1,
+                len(self.state['roms'])))
+        else:
+            self.app.write('font-12', x, y,
+                "{} rom(s)".format(len(self.state['roms'])))
+
     def render(self):
         x, y = self.props['x'], self.props['y']
         if self.state['select'] == -1:
@@ -171,11 +186,11 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                 self.app.write('font-12', x, y, rom)
             y += self.props['line_space']
         y += self.props['line_space']
-        self.app.write('font-12', x, y,
-                "Page {} of {} ({} roms)".format(
-                (self.state['page'] + 1),
-                self.state['last_page'] + 1,
-                len(self.state['roms'])))
+        if self.state['select'] == self.props['page_size']:
+            with self.app.tint(self.props['highlight']):
+                self.render_footer(x, y)
+        else:
+            self.render_footer(x, y)
         if self.state['error']:
             y += self.props['line_space']
             with self.app.tint((0xff, 0x00, 0x00, 0xff)):
