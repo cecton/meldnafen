@@ -115,6 +115,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def show_menu(self):
         if not self.state['roms']:
             return
+        if not 0 < self.state['select'] < self.props['page_size']:
+            return
         self.props['show_menu']({
             'game': self.game,
             'app': self.app,
