@@ -11,8 +11,7 @@ class Menu(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
             sdl2.SDL_SCANCODE_UP: self.previous_item,
             sdl2.SDL_SCANCODE_DOWN: self.next_item,
             sdl2.SDL_SCANCODE_RETURN: self.choose,
-            sdl2.SDL_SCANCODE_BACKSPACE: self.quit_menu,
-            sdl2.SDL_SCANCODE_ESCAPE: self.props['on_quit'],
+            sdl2.SDL_SCANCODE_ESCAPE: self.quit_menu,
         }
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
 

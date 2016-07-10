@@ -15,9 +15,6 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.register_event_handler(sdl2.SDL_JOYBUTTONDOWN, self.button_down)
         self.register_event_handler(sdl2.SDL_JOYAXISMOTION, self.axis_motion)
         self.register_event_handler(sdl2.SDL_JOYHATMOTION, self.hat_motion)
-        self.set_state({
-            'keyboard_mapping': {},
-        })
         self.joysticks = {}
 
     def activate(self):
@@ -26,7 +23,7 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
 
     def added(self, event):
         joystick = self.props['manager'].get(event.jdevice.which)
-        self.props['on_joystick_added'](joystick)
+        self.load(joystick)
 
     def removed(self, event):
         joystick = self.joysticks.get(event.jdevice.which)
@@ -35,20 +32,14 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         self.logger.debug("Joystick removed: %s", joystick.name)
         joystick.close()
         self.joysticks.pop(joystick.id)
-        self.props['on_joystick_removed']()
 
     @property
     def available(self):
         return any(x.opened for x in self.joysticks.values())
 
-    def load(self, joystick, mapping):
+    def load(self, joystick):
         joystick.open()
         self.joysticks[joystick.id] = joystick
-        keyboard_mapping = self.state['keyboard_mapping'].copy()
-        keyboard_mapping[joystick.id] = mapping
-        self.set_state({
-            'keyboard_mapping': keyboard_mapping,
-        })
 
     def _push_keyboard_event(self, key):
         self.event.type = sdl2.SDL_KEYDOWN
@@ -59,46 +50,46 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def button_down(self, event):
         if event.jbutton.which not in self.joysticks:
             return
-        mapping = self.state['keyboard_mapping'].get(event.jbutton.which)
-        if not mapping:
-            return
-        key = mapping.get(str(event.jbutton.button))
-        if key:
-            self.app.keys[key] = sdl2.SDL_TRUE
-            self._push_keyboard_event(key)
-        else:
-            self.logger.debug(
-                "Button %d on joystick %d not mapped",
-                event.jbutton.button,
-                self.joysticks[event.jbutton.which].index)
+        self.logger.debug(
+            "Button %d on joystick %d pressed",
+            event.jbutton.button,
+            self.joysticks[event.jbutton.which].index)
+        if event.jbutton.button == 1:
+            self._push_keyboard_event(sdl2.SDL_SCANCODE_ESCAPE)
+        elif event.jbutton.button in (0, 2):
+            # NOTE: some joysticks have way too much buttons and their action
+            #       overlaps with the hats. Let's limit this action to 2
+            #       buttons. So 3 buttons gamepads like the Mega Drive will
+            #       have A and C to validate.
+            # TODO: cancel button action when a hat or an axis is used?
+            self._push_keyboard_event(sdl2.SDL_SCANCODE_RETURN)
 
     def axis_motion(self, event):
         if event.jbutton.which not in self.joysticks:
             return
-        mapping = self.state['keyboard_mapping'].get(event.jaxis.which)
-        if not mapping:
+        if event.jaxis.axis > 1:
             return
-        value = event.jaxis.value
-        if value < -0x4000:
+        if event.jaxis.value < -0x4000:
             self.axis_change[event.jaxis.which] = "-{}".format(event.jaxis.axis)
-        elif value >= 0x4000:
+        elif event.jaxis.value >= 0x4000:
             self.axis_change[event.jaxis.which] = "+{}".format(event.jaxis.axis)
-        elif value == 0 and self.axis_change.get(event.jaxis.which):
-            key = mapping.get(self.axis_change[event.jaxis.which])
-            if key:
-                self.app.keys[key] = sdl2.SDL_TRUE
-                self._push_keyboard_event(key)
-            else:
-                self.logger.debug(
-                    "Axis %s on joystick %d not mapped",
-                    self.axis_change[event.jaxis.which], self.joysticks[event.jaxis.which].index)
+        elif event.jaxis.value == 0 and self.axis_change.get(event.jaxis.which):
+            self.logger.debug(
+                "Axis motion detected on joystick %d: %s",
+                self.joysticks[event.jaxis.which].index,
+                self.axis_change[event.jaxis.which])
+            if self.axis_change[event.jaxis.which] == "-0":
+                self._push_keyboard_event(sdl2.SDL_SCANCODE_LEFT)
+            elif self.axis_change[event.jaxis.which] == "+0":
+                self._push_keyboard_event(sdl2.SDL_SCANCODE_RIGHT)
+            elif self.axis_change[event.jaxis.which] == "-1":
+                self._push_keyboard_event(sdl2.SDL_SCANCODE_UP)
+            elif self.axis_change[event.jaxis.which] == "+1":
+                self._push_keyboard_event(sdl2.SDL_SCANCODE_DOWN)
             self.axis_change[event.jaxis.which] = None
 
     def hat_motion(self, event):
         if event.jhat.which not in self.joysticks:
-            return
-        mapping = self.state['keyboard_mapping'].get(event.jhat.which)
-        if not mapping:
             return
         value = event.jhat.value
         if value == sdl2.SDL_HAT_UP:
@@ -110,12 +101,16 @@ class MenuJoystick(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
         elif value == sdl2.SDL_HAT_RIGHT:
             self.hat_change[event.jhat.which] = "h{}right".format(event.jhat.hat)
         elif value == sdl2.SDL_HAT_CENTERED and self.hat_change:
-            key = mapping.get(self.hat_change[event.jhat.which])
-            if key:
-                self.app.keys[key] = sdl2.SDL_TRUE
-                self._push_keyboard_event(key)
-            else:
-                self.logger.debug(
-                    "Hat %s on joystick %d not mapped",
-                    self.hat_change[event.jhat.which], self.joysticks[event.jhat.which].index)
+            self.logger.debug(
+                "Hat motion detected on joystick %d: %s",
+                self.joysticks[event.jhat.which].index,
+                self.hat_change[event.jhat.which])
+            if self.hat_change[event.jhat.which] == "h0up":
+                self._push_keyboard_event(sdl2.SDL_SCANCODE_UP)
+            if self.hat_change[event.jhat.which] == "h0down":
+                self._push_keyboard_event(sdl2.SDL_SCANCODE_DOWN)
+            if self.hat_change[event.jhat.which] == "h0left":
+                self._push_keyboard_event(sdl2.SDL_SCANCODE_LEFT)
+            if self.hat_change[event.jhat.which] == "h0right":
+                self._push_keyboard_event(sdl2.SDL_SCANCODE_RIGHT)
             self.hat_change[event.jhat.which] = None

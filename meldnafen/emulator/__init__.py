@@ -75,9 +75,7 @@ class Emulator(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
                         for i in range(1, self.props['players_number'] + 1)
                     ] + [
                         ("Clear all", "call", self.remove_game_controls),
-                    ]),
-                ("Controls: {app.name}", "call",
-                    self.app.activate_joystick_configuration)
+                    ])
             ]),
             ("Smooth: {app.settings[smooth]}", "call", self.app.toggle_smooth),
             ("FPS: {app.debugger.active}", "call", self.app.debugger.toggle),

@@ -9,13 +9,12 @@ from sdl2ui.joystick import JoystickManager
 import meldnafen
 from meldnafen.joystick import MenuJoystick
 from meldnafen.mixins.bgm import BgmMixin
-from meldnafen.mixins.controls import ControlsMixin
 from meldnafen.mixins.emulator import EmulatorMixin
 
 
 class Meldnafen(
         sdl2ui.App, sdl2ui.mixins.ImmutableMixin,
-        BgmMixin, EmulatorMixin, ControlsMixin):
+        BgmMixin, EmulatorMixin):
 
     name = "Meldnafen"
 
@@ -56,15 +55,13 @@ class Meldnafen(
             y=self.y - 8)
         self.joystick_manager = self.add_component(JoystickManager)
         self.joystick = self.add_component(MenuJoystick,
-            manager=self.joystick_manager,
-            index=0,
-            on_joystick_added=self.menu_joystick_added,
-            on_joystick_removed=self.menu_joystick_removed)
+            manager=self.joystick_manager)
         self.register_event_handler(sdl2.SDL_KEYDOWN, self.keypress)
 
     def activate(self):
         if self.settings['debug']:
             self.debugger.enable()
+        self.unlock()
 
     def quit(self, exception=None):
         if not isinstance(exception, Exception):
