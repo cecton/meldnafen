@@ -102,6 +102,8 @@ class ListRoms(sdl2ui.Component, sdl2ui.mixins.ImmutableMixin):
     def run_emulator(self):
         if not self.state['roms']:
             return
+        if not 0 < self.state['select'] < self.props['page_size']:
+            return
         try:
             self.app.run_emulator(
                 self.props,
